@@ -2,14 +2,14 @@ import UIKit
 
 final class MovieQuizViewController: UIViewController {
     
-    struct QuizQuestion {
+    private struct QuizQuestion {
         let image: String
-        let text: String
+let text: String
         let correctAnswer: Bool
     }
     
     // вью модель для состояния "Вопрос показан"
-    struct QuizStepViewModel {
+    private struct QuizStepViewModel {
         // картинка с афишей фильма с типом UIImage
         let image: UIImage
         // вопрос о рейтинге квиза
@@ -39,13 +39,13 @@ final class MovieQuizViewController: UIViewController {
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
     private var correctAnswers = 0
     
-    @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet private weak var yesButtonStatus: UIButton!
+    @IBOutlet private weak var noButtonStatus: UIButton!
+    @IBOutlet private weak var imageView: UIImageView!
+    @IBOutlet private weak var counterLabel: UILabel!
+    @IBOutlet private weak var textLabel: UILabel!
     
-    @IBOutlet weak var counterLabel: UILabel!
-    
-    @IBOutlet weak var textLabel: UILabel!
-    
-    @IBAction func yesButtonClicked(_ sender: UIButton) {
+    @IBAction private func yesButtonClicked(_ sender: UIButton) {
         let userAnswer = true
         let correctAnswer = questions[currentQuestionIndex].correctAnswer
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
@@ -53,7 +53,7 @@ final class MovieQuizViewController: UIViewController {
 //        nextScreen()
     }
     
-    @IBAction func noButtonClicked(_ sender: UIButton) {
+    @IBAction private func noButtonClicked(_ sender: UIButton) {
         let userAnswer = false
         let correctAnswer = questions[currentQuestionIndex].correctAnswer
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
@@ -63,7 +63,11 @@ final class MovieQuizViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+//        textLabel.font = UIFont(name: "YS Display-Bold", size: 23)
+        textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
+        imageView.layer.cornerRadius = 20
         nextScreen()
+        
 //        imageView.backgroundColor = .green
 //        imageView.image = UIImage(named:  "LaunchScreen")
     }
@@ -73,15 +77,38 @@ final class MovieQuizViewController: UIViewController {
     private func showAnswerResult(isCorrect: Bool) {
         imageView.layer.masksToBounds = true // даём разрешение на рисование рамки
         imageView.layer.borderWidth = 8               // толщина рамки
-        imageView.layer.cornerRadius = 6            // радиус скругления углов рамки
+        imageView.layer.cornerRadius = 20         // радиус скругления углов рамки
+        buttonStatus(isEnabled: false)
         // красим рамку
         if isCorrect {
             imageView.layer.borderColor = UIColor.ypGreen.cgColor
+            correctAnswers += 1
         } else {
             imageView.layer.borderColor = UIColor.ypRed.cgColor
         }
         //Yandex solution
 //        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
+        DispatchQueue.main.asyncAfter(deadline:  .now() + 5.0) {
+            self.imageView.layer.borderColor = UIColor.clear.cgColor
+            self.showNextQuestionResults()
+        }
+    }
+    
+    private func showNextQuestionResults() {
+        if currentQuestionIndex == questions.count - 1 {
+            // идем в состояние "Результат квиза"
+        } else {
+            currentQuestionIndex += 1
+                // идем в стостояние "Вопрос показан"
+                nextScreen()
+                buttonStatus(isEnabled: true)
+        }
+    }
+    
+    private func buttonStatus(isEnabled: Bool) {
+        yesButtonStatus.isEnabled = isEnabled
+//        yesButtonStatus.currentTitleColor == UIColor.ypBlack ? UIColor.ypGray : UIColor.ypBlack
+        noButtonStatus.isEnabled = isEnabled
     }
     
     private func nextScreen() {
@@ -93,7 +120,7 @@ final class MovieQuizViewController: UIViewController {
     
     // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        var resModel: QuizStepViewModel = QuizStepViewModel(
+        let resModel: QuizStepViewModel = QuizStepViewModel(
             image: UIImage(named: model.image) ??  UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questions.count)"
