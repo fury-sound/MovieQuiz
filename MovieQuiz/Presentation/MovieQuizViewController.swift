@@ -4,7 +4,7 @@ final class MovieQuizViewController: UIViewController {
     
     private struct QuizQuestion {
         let image: String
-let text: String
+        let text: String
         let correctAnswer: Bool
     }
     
@@ -16,6 +16,13 @@ let text: String
         let question: String
         // строка с порядковым номером этого вопроса (ex. "1/10")
         let questionNumber: String
+    }
+    
+    // вью-модель для состояния "Результат квиза"
+    struct QuizResultsViewModel {
+        let title: String  // строка с заголовком алерта
+        let text: String // строка с текстом о количестве набранных очков
+        let buttonText: String // текст для кнопки алерта
     }
     
     // массив со списком моковых вопросов
@@ -78,7 +85,7 @@ let text: String
         imageView.layer.masksToBounds = true // даём разрешение на рисование рамки
         imageView.layer.borderWidth = 8               // толщина рамки
         imageView.layer.cornerRadius = 20         // радиус скругления углов рамки
-        buttonStatus(isEnabled: false)
+        buttonStatus(isEnabled: false) // блокируем кнопки и меняем цвет их фона на время показа результата
         // красим рамку
         if isCorrect {
             imageView.layer.borderColor = UIColor.ypGreen.cgColor
@@ -88,7 +95,7 @@ let text: String
         }
         //Yandex solution
 //        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-        DispatchQueue.main.asyncAfter(deadline:  .now() + 5.0) {
+        DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) {
             self.imageView.layer.borderColor = UIColor.clear.cgColor
             self.showNextQuestionResults()
         }
@@ -97,6 +104,27 @@ let text: String
     private func showNextQuestionResults() {
         if currentQuestionIndex == questions.count - 1 {
             // идем в состояние "Результат квиза"
+//            let alert = UIAlertController(
+//                title: "Раунд окончен", // заголовок всплывающего окна
+//                message: "Ваш результат \(correctAnswers)/\(questions.count)", // текст во всплывающем окне
+//                preferredStyle:  .alert)  // preferredStyle может быть .alert или .actionSheet
+//            let action = UIAlertAction(title: "Сыграть еще раз!", style: .default) { _ in
+//                print("Сыграть еще раз!")
+//                self.currentQuestionIndex = 0
+//                // сбрасываем переменную с количеством правильных ответов
+//                self.correctAnswers = 0
+//                // заново показываем первый вопрос
+//                self.nextScreen()
+//                self.buttonStatus(isEnabled: true)
+//            }
+//            alert.addAction(action)
+//            self.present(alert, animated:  true, completion:  nil)
+            let quizResultsViewModel = QuizResultsViewModel(
+                title: "Раунд окончен",
+                text: "Ваш результат \(correctAnswers)/\(questions.count)",
+                buttonText: "Сыграть еще раз!")
+            show(quiz: quizResultsViewModel)
+            
         } else {
             currentQuestionIndex += 1
                 // идем в стостояние "Вопрос показан"
@@ -105,17 +133,28 @@ let text: String
         }
     }
     
+// метод блокировки/разблокировки кнопок Да/Нет по результату аргумента (true/false)
+// Значение false - блокировка на время показа результата ответа на вопрос (рамка)
+// Значение true - разблокировка после перехода на новый экран
+ // Цвет фона кнопок, пока они заблокированы, меняется на ypGray
     private func buttonStatus(isEnabled: Bool) {
         yesButtonStatus.isEnabled = isEnabled
-//        yesButtonStatus.currentTitleColor == UIColor.ypBlack ? UIColor.ypGray : UIColor.ypBlack
         noButtonStatus.isEnabled = isEnabled
+        
+        if isEnabled {
+            yesButtonStatus.backgroundColor = .ypWhite
+            noButtonStatus.backgroundColor = .ypWhite
+        } else {
+            yesButtonStatus.backgroundColor = .ypGray
+            noButtonStatus.backgroundColor = .ypGray
+        }
     }
     
+// универсальная функция вывода текущего вопроса по его индексу, с конвертацией по модели и ее показом на экране
     private func nextScreen() {
         let currentQuestion = questions[currentQuestionIndex]
         let currentQuizStepViewModel = convert(model: currentQuestion)
         show(quiz: currentQuizStepViewModel)
-//        return currentQuestion.correctAnswer
     }
     
     // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
@@ -132,6 +171,28 @@ let text: String
         imageView.image = step.image
         counterLabel.text = step.questionNumber // + "/\(questions.count)"
         textLabel.text = step.question
+    }
+    
+    // приватный метод для показа результатов раунда квиза
+    // принимает вью модель QuizResultsViewModel и ничего не возвращает
+    private func show(quiz result: QuizResultsViewModel) {
+        let alert = UIAlertController(
+            title: result.title,                 // заголовок всплывающего окна
+            message: result.text,               // текст во всплывающем окне
+            preferredStyle: .alert)     // preferredStyle может быть .alert или .actionSheet
+        let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
+            // print("Сыграть еще раз!")
+            // сбрасываем переменную счетчика вопросов
+            self.currentQuestionIndex = 0
+            // сбрасываем переменную с количеством правильных ответов
+            self.correctAnswers = 0
+            // заново показываем вопрос вызовом функции nextScreen(); вопрос первый, поскольку currentQuestionIndex сброшен в 0
+            self.nextScreen()
+            // разблокируем кнопки
+            self.buttonStatus(isEnabled: true)
+        }
+            alert.addAction(action)
+            self.present(alert, animated:  true, completion:  nil)
     }
     
 }
