@@ -28,7 +28,7 @@ final class MovieQuizViewController: UIViewController {
     }
     
     // массив со списком моковых вопросов
-    private let questions: [QuizQuestion] = [
+    private var questions: [QuizQuestion] = [
         QuizQuestion(image: "The Godfather", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
         QuizQuestion(image: "The Dark Knight", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
         QuizQuestion(image: "Kill Bill", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
@@ -61,6 +61,7 @@ override func viewDidLoad() {
 //        textLabel.font = UIFont(name: "YS Display-Bold", size: 23)
    textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
    imageView.layer.cornerRadius = 20
+    questions = questions.shuffled()
     // MARK: отличие от описания, вызов универсальной функции вывода вопроса на экран,
     // вместо вызова этих функций отдельно для первого экрана
     nextScreen()
@@ -152,18 +153,19 @@ private func show(quiz result: QuizResultsViewModel) {
        title: result.title,                 // заголовок всплывающего окна
        message: result.text,               // текст во всплывающем окне
        preferredStyle: .alert)     // preferredStyle может быть .alert или .actionSheet
-   let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
+   let action = UIAlertAction(title: result.buttonText, style: .default) { [self] _ in
        // сбрасываем переменную счетчика вопросов
-       self.currentQuestionIndex = 0
+       currentQuestionIndex = 0
        // сбрасываем переменную с количеством правильных ответов
-       self.correctAnswers = 0
+       correctAnswers = 0
        // заново показываем вопрос вызовом функции nextScreen(); вопрос первый, поскольку currentQuestionIndex сброшен в 0
-       self.nextScreen()
+       nextScreen()
        // разблокируем кнопки
-       self.buttonStatus(isEnabled: true)
+       buttonStatus(isEnabled: true)
    }
        alert.addAction(action)
        self.present(alert, animated:  true, completion:  nil)
+       questions = questions.shuffled()
 }
     
 //MARK: блок с аннотацией @IBAction
