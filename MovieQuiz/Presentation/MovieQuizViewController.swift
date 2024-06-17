@@ -58,7 +58,6 @@ final class MovieQuizViewController: UIViewController {
 // MARK: - Lifecycle
 override func viewDidLoad() {
    super.viewDidLoad()
-//        textLabel.font = UIFont(name: "YS Display-Bold", size: 23)
    textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
    imageView.layer.cornerRadius = 20
     // MARK: отличие от описания, вызов универсальной функции вывода вопроса на экран,
@@ -82,7 +81,8 @@ private func showAnswerResult(isCorrect: Bool) {
    }
 // Yandex solution - оставил для сравнения
 //        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-   DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) {
+   DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
+       guard let self = self else {  return }
        self.imageView.layer.borderColor = UIColor.clear.cgColor
        self.showNextQuestionResults()
    }
@@ -152,7 +152,10 @@ private func show(quiz result: QuizResultsViewModel) {
        title: result.title,                 // заголовок всплывающего окна
        message: result.text,               // текст во всплывающем окне
        preferredStyle: .alert)     // preferredStyle может быть .alert или .actionSheet
-   let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
+    let action = UIAlertAction(title: result.buttonText, style: .default) {  [weak self]  _ in  //слабая ссылка на self
+       // убрали увеличение счетчика на класс при использовании self в переменных замыкания с помощью [weak self]
+       // проверяем опциональную слабую ссылку на nil (разворачиваем)
+       guard let self = self else { return }
        // сбрасываем переменную счетчика вопросов
        self.currentQuestionIndex = 0
        // сбрасываем переменную с количеством правильных ответов
