@@ -3,51 +3,16 @@ import UIKit
 final class MovieQuizViewController: UIViewController {
     
 //MARK: Блок свойств
-    // вью модель для вопроса
-    private struct QuizQuestion {
-        let image: String
-        let text: String
-        let correctAnswer: Bool
-    }
-    
-    // вью модель для состояния "Вопрос показан"
-    private struct QuizStepViewModel {
-        // картинка с афишей фильма с типом UIImage
-        let image: UIImage
-        // вопрос о рейтинге квиза
-        let question: String
-        // строка с порядковым номером этого вопроса (ex. "1/10")
-        let questionNumber: String
-    }
-    
-    // вью-модель для состояния "Результат квиза"
-    private struct QuizResultsViewModel {
-        let title: String                   // строка с заголовком алерта
-        let text: String                     // строка с текстом о количестве набранных очков
-        let buttonText: String   // текст для кнопки алерта
-    }
-    
-    // массив со списком моковых вопросов
-    private let questions: [QuizQuestion] = [
-        QuizQuestion(image: "The Godfather", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
-        QuizQuestion(image: "The Dark Knight", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
-        QuizQuestion(image: "Kill Bill", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
-        QuizQuestion(image: "The Avengers", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
-        QuizQuestion(image: "Deadpool", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
-        QuizQuestion(image: "The Green Knight", text: "Рейтинг этого фильма больше 6?", correctAnswer: true),
-        QuizQuestion(image: "Old", text: "Рейтинг этого фильма больше 6?", correctAnswer: false),
-        QuizQuestion(image: "The Ice Age Adventures of Buck Wild", text: "Рейтинг этого фильма больше 6?", correctAnswer: false),
-        QuizQuestion(image: "Tesla", text: "Рейтинг этого фильма больше 6?", correctAnswer: false),
-        QuizQuestion(image: "Vivarium", text: "Рейтинг этого фильма больше 6?", correctAnswer: false)
-    ]
-    
     // переменная с индексом текущего вопроса, начальное значение 0
     // (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
     private var currentQuestionIndex = 0
-    
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
     private var correctAnswers = 0
-    
+    private let questionAmount: Int = 10 //общее количество вопросов для квиза
+    //фабрика вопросов. Контроллер будет обращаться за вопросами к ней.
+    private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
+    private var currentQuestion: QuizQuestion? //вопрос, который видит пользователь.
+
     @IBOutlet private weak var yesButtonStatus: UIButton!
     @IBOutlet private weak var noButtonStatus: UIButton!
     @IBOutlet private weak var imageView: UIImageView!
@@ -89,11 +54,11 @@ private func showAnswerResult(isCorrect: Bool) {
 }
 
 private func showNextQuestionResults() {
-   if currentQuestionIndex == questions.count - 1 {
+   if currentQuestionIndex == questionAmount - 1 {
        // идем в состояние "Результат квиза"
        let quizResultsViewModel = QuizResultsViewModel(
            title: "Раунд окончен",
-           text: "Ваш результат \(correctAnswers)/\(questions.count)",
+           text: "Ваш результат \(correctAnswers)/\(questionAmount)",
            buttonText: "Сыграть еще раз!")
        show(quiz: quizResultsViewModel)
    } else {
@@ -123,9 +88,12 @@ private func buttonStatus(isEnabled: Bool) {
 // MARK: отличие от реализации в описании
 // универсальная функция вывода текущего вопроса по его индексу, с конвертацией по модели и ее показом на экране
 private func nextScreen() {
-   let currentQuestion = questions[currentQuestionIndex]
-   let currentQuizStepViewModel = convert(model: currentQuestion)
-   show(quiz: currentQuizStepViewModel)
+//   let currentQuestion = questions[currentQuestionIndex] // old code
+    if let nextQuestion = questionFactory.requestNextQuestion() {
+        currentQuestion = nextQuestion
+        let currentQuizStepViewModel = convert(model: nextQuestion)
+        show(quiz: currentQuizStepViewModel)
+    }
 }
 
 // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
@@ -133,7 +101,7 @@ private func convert(model: QuizQuestion) -> QuizStepViewModel {
    let resModel: QuizStepViewModel = QuizStepViewModel(
        image: UIImage(named: model.image) ??  UIImage(),
        question: model.text,
-       questionNumber: "\(currentQuestionIndex + 1)/\(questions.count)"
+       questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
    )
    return resModel
 }
@@ -171,14 +139,26 @@ private func show(quiz result: QuizResultsViewModel) {
     
 //MARK: блок с аннотацией @IBAction
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
+        print("\(self.description) - button pressed")
         let userAnswer = true
-        let correctAnswer = questions[currentQuestionIndex].correctAnswer
+//        let correctAnswer = questions[currentQuestionIndex].correctAnswer
+        guard let correctAnswer = currentQuestion?.correctAnswer else {
+            print("\(self.description) - no correct answer")
+            return
+        }
+        print("\(self.description) - Before showAnswerResult")
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
+        print("\(self.description) - button pressed")
         let userAnswer = false
-        let correctAnswer = questions[currentQuestionIndex].correctAnswer
+//        let correctAnswer = questions[currentQuestionIndex].correctAnswer
+        guard let correctAnswer = currentQuestion?.correctAnswer else {
+            print("\(self.description) - no correct answer")
+            return
+        }
+        print("\(self.description) - Before showAnswerResult")
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
     }
 }
