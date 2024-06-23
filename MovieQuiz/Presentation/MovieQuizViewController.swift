@@ -1,17 +1,19 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
     
 //MARK: Блок свойств
     // переменная с индексом текущего вопроса, начальное значение 0
     // (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
-    private var currentQuestionIndex = 0
+    var currentQuestionIndex = 8
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
-    private var correctAnswers = 0
+    var correctAnswers = 0
     private let questionAmount: Int = 10 //общее количество вопросов для квиза
     //фабрика вопросов. Контроллер будет обращаться за вопросами к ней.
-    private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
+//    private var questionFactory: QuestionFactoryProtocol? // для DI свойством
+    var questionFactory: QuestionFactoryProtocol = QuestionFactory() // для DI методом или через init()
     private var currentQuestion: QuizQuestion? //вопрос, который видит пользователь.
+    private var alertModel:  AlertModel?
 
     @IBOutlet private weak var yesButtonStatus: UIButton!
     @IBOutlet private weak var noButtonStatus: UIButton!
@@ -25,10 +27,35 @@ override func viewDidLoad() {
    super.viewDidLoad()
    textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
    imageView.layer.cornerRadius = 20
+    let questionFactory = QuestionFactory()  //Создаём экземпляр фабрики для ее настройки
+//    questionFactory.delegate = self                       // Устанавливаем связь фабрика – делегат через свойство.
+    questionFactory.setQuestionFactoryDelegate(self) // связь через метод в QuestionFactory
+    self.questionFactory = questionFactory  //Сохраняем подготовленный экземляр в свойство вью-контроллера
+    //устраняем дублирование кода в реализации Yandex. 
+    // В моем коде заменяем вызовы nextScreen() (имел ту же функцию, но в рамках 1 класса)
+    questionFactory.requestNextQuestion()
     // MARK: отличие от описания, вызов универсальной функции вывода вопроса на экран,
     // вместо вызова этих функций отдельно для первого экрана
-    nextScreen()
+//    nextScreen() // закомментирован. Функционал ушел в метод didReceiveNextQuestion()
+    
 }
+    
+// MARK: - QuestionFactoryDelegate
+
+func didReceiveNextQuestion(question: QuizQuestion?) {
+    // проверка, что вопрос question не nil
+    guard let question = question else {
+        return
+    }
+   currentQuestion = question
+    let currentQuizStepViewModel = convert(model: question)
+    DispatchQueue.main.async { [weak self] in
+        self?.show(quiz: currentQuizStepViewModel)
+    }
+//    next Screen()
+}
+
+// MARK: - Private function
 
 // приватный метод, который меняет цвет рамки
 // принимает на вход булевое значение и ничего не возвращает
@@ -64,7 +91,8 @@ private func showNextQuestionResults() {
    } else {
        currentQuestionIndex += 1
            // идем в стостояние "Вопрос показан"
-       nextScreen()
+//       nextScreen()
+       questionFactory.requestNextQuestion() //заменяеи nextScreen()
       buttonStatus(isEnabled: true)
    }
 }
@@ -73,7 +101,7 @@ private func showNextQuestionResults() {
 // Значение false - блокировка на время показа результата ответа на вопрос (рамка)
 // Значение true - разблокировка после перехода на новый экран
 // Цвет фона кнопок, пока они заблокированы, меняется на ypGray
-private func buttonStatus(isEnabled: Bool) {
+func buttonStatus(isEnabled: Bool) {
    yesButtonStatus.isEnabled = isEnabled
    noButtonStatus.isEnabled = isEnabled
    if isEnabled {
@@ -86,15 +114,15 @@ private func buttonStatus(isEnabled: Bool) {
 }
 
 // MARK: отличие от реализации в описании
-// универсальная функция вывода текущего вопроса по его индексу, с конвертацией по модели и ее показом на экране
-private func nextScreen() {
+// универсальная функция вывода текущего вопроса по его индексу, с конвертацией по модели и ее показом на экране. Закомментирован - функционал ушел в didReceiveNextQuestion()
+//private func nextScreen() {
 //   let currentQuestion = questions[currentQuestionIndex] // old code
-    if let nextQuestion = questionFactory.requestNextQuestion() {
-        currentQuestion = nextQuestion
-        let currentQuizStepViewModel = convert(model: nextQuestion)
-        show(quiz: currentQuizStepViewModel)
-    }
-}
+//    if let nextQuestion = questionFactory.requestNextQuestion() {
+//        currentQuestion = nextQuestion
+//        let currentQuizStepViewModel = convert(model: nextQuestion)
+//        show(quiz: currentQuizStepViewModel)
+//    }
+//}
 
 // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
 private func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -112,53 +140,73 @@ private func show(quiz step: QuizStepViewModel) {
    counterLabel.text = step.questionNumber // + "/\(questions.count)"
    textLabel.text = step.question
 }
-
+ 
+    
 // приватный метод для показа результатов раунда квиза
 // принимает вью модель QuizResultsViewModel и ничего не возвращает
-private func show(quiz result: QuizResultsViewModel) {
-   let alert = UIAlertController(
-       title: result.title,                 // заголовок всплывающего окна
-       message: result.text,               // текст во всплывающем окне
-       preferredStyle: .alert)     // preferredStyle может быть .alert или .actionSheet
-    let action = UIAlertAction(title: result.buttonText, style: .default) {  [weak self]  _ in  //слабая ссылка на self
-       // убрали увеличение счетчика на класс при использовании self в переменных замыкания с помощью [weak self]
-       // проверяем опциональную слабую ссылку на nil (разворачиваем)
-       guard let self = self else { return }
-       // сбрасываем переменную счетчика вопросов
-       self.currentQuestionIndex = 0
-       // сбрасываем переменную с количеством правильных ответов
-       self.correctAnswers = 0
-       // заново показываем вопрос вызовом функции nextScreen(); вопрос первый, поскольку currentQuestionIndex сброшен в 0
-       self.nextScreen()
-       // разблокируем кнопки
-       self.buttonStatus(isEnabled: true)
-   }
-       alert.addAction(action)
-       self.present(alert, animated:  true, completion:  nil)
+func show(quiz result: QuizResultsViewModel) {
+    alertModel =  AlertModel(
+        title: result.title,
+        message: result.text,
+        buttonText: result.buttonText,
+        preferredStyle: .alert, 
+        completion:  {
+            guard let alertModel = self.alertModel else {return}
+            let alertPresenter = AlertPresenter(alertModel: alertModel)
+            alertPresenter.setQuestionFactoryDelegate(self)
+            alertPresenter.showAlert()
+        })
+    alertModel?.completion()
+//    let alertPresenter = AlertPresenter(alertModel: alertModel)
+//    alertPresenter.setQuestionFactoryDelegate(self)
+//    alertPresenter.showAlert()
+//    alertPresenter.alertModel?.completion()
+
+//    let alert = UIAlertController(
+//       title: result.title,                 // заголовок всплывающего окна
+//       message: result.text,               // текст во всплывающем окне
+//       preferredStyle: .alert)     // preferredStyle может быть .alert или .actionSheet
+//    
+//    let action = UIAlertAction(title: result.buttonText, style: .default) {  [weak self]  _ in  //слабая ссылка на self
+//       // убрали увеличение счетчика на класс при использовании self в переменных замыкания с помощью [weak self]
+//       // проверяем опциональную слабую ссылку на nil (разворачиваем)
+//       guard let self = self else { return }
+//       // сбрасываем переменную счетчика вопросов
+//       self.currentQuestionIndex = 0
+//       // сбрасываем переменную с количеством правильных ответов
+//       self.correctAnswers = 0
+//       // заново показываем вопрос вызовом функции nextScreen(); вопрос первый, поскольку currentQuestionIndex сброшен в 0
+//      // self.nextScreen()
+//       self.questionFactory.requestNextQuestion() //заменяет nextScreen()
+//       // разблокируем кнопки
+//       self.buttonStatus(isEnabled: true)
+//   }
+//       alert.addAction(action)
+//       self.present(alert, animated:  true, completion:  nil)
 }
     
 //MARK: блок с аннотацией @IBAction
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        print("\(self.description) - button pressed")
+//        print("\(self.description) - button pressed")
         let userAnswer = true
 //        let correctAnswer = questions[currentQuestionIndex].correctAnswer
         guard let correctAnswer = currentQuestion?.correctAnswer else {
-            print("\(self.description) - no correct answer")
+//            print("\(self.description) - no correct answer")
             return
         }
-        print("\(self.description) - Before showAnswerResult")
+//        print("\(self.description) - Before showAnswerResult")
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        print("\(self.description) - button pressed")
+//        print("\(self.description) - button pressed")
         let userAnswer = false
 //        let correctAnswer = questions[currentQuestionIndex].correctAnswer
         guard let correctAnswer = currentQuestion?.correctAnswer else {
-            print("\(self.description) - no correct answer")
+//            print("\(self.description) - no correct answer")
             return
         }
-        print("\(self.description) - Before showAnswerResult")
+//        print("\(self.description) - Before showAnswerResult")
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
     }
 }
