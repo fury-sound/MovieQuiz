@@ -13,5 +13,13 @@ struct AlertModel {
     var message: String
     var buttonText: String
     var preferredStyle: UIAlertController.Style
-    var completion: (() -> Void)
+    var completion: () -> ()
+    
+    init(title: String, message: String, buttonText: String, preferredStyle: UIAlertController.Style, completion: @escaping () -> Void) {
+        self.title = title
+        self.message = message
+        self.buttonText = buttonText
+        self.preferredStyle = preferredStyle
+        self.completion = completion
+    }
 }
