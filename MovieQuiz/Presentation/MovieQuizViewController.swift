@@ -1,4 +1,5 @@
 import UIKit
+import Foundation
 
 final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
     
@@ -37,6 +38,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         // MARK: отличие от описания, вызов универсальной функции вывода вопроса на экран,
         // вместо вызова этих функций отдельно для первого экрана
         //    nextScreen() // закомментирован. Функционал ушел в метод didReceiveNextQuestion()
+        
+        // testing code for UserDefaults
         //        print(Bundle.main.bundlePath)
         //    if let imagePath = Bundle.main.path(forResource: "AppIcon60x60@2x", ofType: "png") {
         //        let image = UIImage(contentsOfFile: imagePath)
@@ -45,6 +48,33 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         //    }
         //        print(NSHomeDirectory())
         //        UserDefaults.standard.set(true, forKey: "viewDidLoad")
+//        print(NSUserName(), NSFullUserName())
+//        let homeDirectory = NSHomeDirectory()
+//        let directoryWithFile = homeDirectory + "/Documents/"
+//        let directoryWithFileURL = URL(string: directoryWithFile)
+//        print("Home directory: \(homeDirectory)")
+//        print("Documents directory: \(directoryWithFile)")
+//        print("Documents directory URL: \(directoryWithFileURL)")
+//        print(type(of: homeDirectory))
+//        let fileManager = FileManager()
+//        do {
+//            let temporaryDirectory = try FileManager.default.url(
+//                for: .itemReplacementDirectory,
+//                in: .userDomainMask,
+//                appropriateFor: directoryWithFileURL,
+//                create: false
+//            )
+//            
+//            print(temporaryDirectory)
+//        } catch {
+//            print("Error happened")
+//        }
+//        let isFile = fileManager.fileExists(atPath: directoryWithFile)
+//        print(fileManager.url(for: URL(fileURLWithPath: directoryWithFile), in: fileManager., appropriateFor: <#T##URL?#>, create: <#T##Bool#>))
+//        print("Is file/dir: \(isFile)")
+//        print(fileManager.contents(atPath:   directoryWithFile))
+//        let data = Data()
+//        print(fileManager.createFile(atPath: directoryWithFile, contents:  data))
     }
     
     // MARK: - QuestionFactoryDelegate
