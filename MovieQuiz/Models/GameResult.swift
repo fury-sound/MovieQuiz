@@ -8,9 +8,9 @@
 import Foundation
 
 struct GameResult {
-    let correct: Int
-    let total: Int
-    let date: Date
+    var correct: Int
+    var total: Int
+    var date: Date
 //    var compareRecords: (GameResult) -> Int
 //
 //    init(correct: Int, total: Int, date: Date, compareRecords: @escaping (GameResult) -> Int) {
@@ -19,7 +19,7 @@ struct GameResult {
 //        self.date = date
 //        self.compareRecords = compareRecords
 //    }
-    func compareRecords (_ previousRecord: GameResult) -> Int {
-        return correct > previousRecord.correct ? correct : previousRecord.correct
+    func compareRecords (_ previousRecord: GameResult) -> Bool {
+        return correct > previousRecord.correct ? true : false
     }
 }

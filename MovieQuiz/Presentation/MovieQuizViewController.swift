@@ -6,7 +6,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     //MARK: Блок свойств
     // переменная с индексом текущего вопроса, начальное значение 0
     // (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
-    private var currentQuestionIndex = 8
+    private var currentQuestionIndex = 0
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
     private var correctAnswers = 0
     //фабрика вопросов. Контроллер будет обращаться за вопросами к ней.
@@ -15,6 +15,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private let questionAmount: Int = 10 //общее количество вопросов для квиза
     private var currentQuestion: QuizQuestion? //вопрос, который видит пользователь.
     private var alertModel:  AlertModel?
+    private var gameStatistics: StatisticServiceProtocol?
     
     @IBOutlet private weak var yesButtonStatus: UIButton!
     @IBOutlet private weak var noButtonStatus: UIButton!
@@ -35,10 +36,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         //устраняем дублирование кода в реализации Yandex.
         // В моем коде заменяем вызовы nextScreen() (имел ту же функцию, но в рамках 1 класса)
         questionFactory.requestNextQuestion()
+        gameStatistics = StatisticService()
+//        showUserDefaults()
+
         // MARK: отличие от описания, вызов универсальной функции вывода вопроса на экран,
         // вместо вызова этих функций отдельно для первого экрана
         //    nextScreen() // закомментирован. Функционал ушел в метод didReceiveNextQuestion()
-        
+
         // testing code for UserDefaults
         //        print(Bundle.main.bundlePath)
         //    if let imagePath = Bundle.main.path(forResource: "AppIcon60x60@2x", ofType: "png") {
@@ -75,6 +79,26 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
 //        print(fileManager.contents(atPath:   directoryWithFile))
 //        let data = Data()
 //        print(fileManager.createFile(atPath: directoryWithFile, contents:  data))
+    }
+    
+    // additional function to see current UserDefaults content - for debugging, not used in the app
+    func showUserDefaults() {
+        // Получаем словарь всех значений
+        let allValues = UserDefaults.standard.dictionaryRepresentation()
+
+        // Печатаем или обрабатываем все ключи и значения
+        for (key, value) in allValues {
+            print("\(key) - \(value)")
+        }
+    }
+    
+    // additional function to delete statistics data in UserDefaults
+    private func resetStatistics() {
+        let allValues = UserDefaults.standard.dictionaryRepresentation()
+// deleting UserDefaults - comment to store data
+        allValues.keys.forEach { key in
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
     
     // MARK: - QuestionFactoryDelegate
@@ -119,10 +143,24 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     private func showNextQuestionResults() {
         if currentQuestionIndex == questionAmount - 1 {
+            // calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
+            guard let gameStatistics else { return }
+            gameStatistics.store(correct: correctAnswers, total: questionAmount)
+
+//            print("correctAnswers, questionAmount:", correctAnswers, questionAmount)
+//            let tempAccuracy = "Временная точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%"
+//            print(tempAccuracy)
+            
+//            bestDate = dateTimeString(DateFormatter.defaultDateTime.string(from: gameStatistics.bestGame.date))
+            
             // идем в состояние "Результат квиза"
             let quizResultsViewModel = QuizResultsViewModel(
                 title: "Раунд окончен",
-                text: "Ваш результат \(correctAnswers)/\(questionAmount)",
+//                text: "Ваш результат \(correctAnswers)/\(questionAmount)",
+                text: "Ваш результат \(correctAnswers)/\(questionAmount)\n" +
+                "Количество сыгранных квизов: \(gameStatistics.gamesCount)\n" +
+                "Рекорд: \(gameStatistics.bestGame.correct)/\(gameStatistics.bestGame.total) (\(gameStatistics.bestGame.date.dateTimeString))\n" +
+                "Средняя точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%",
                 buttonText: "Сыграть еще раз!")
             show(quiz: quizResultsViewModel)
         } else {
@@ -185,6 +223,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         alertModel =  AlertModel(
             title: result.title,
             message: result.text,
+//            message: gameStatistics?.bestGame,
             buttonText: result.buttonText,
             preferredStyle: .alert,
             completion:  { [weak self] in
@@ -193,7 +232,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
                 self.correctAnswers = 0
                 self.buttonStatus(isEnabled: true)
                 self.questionFactory.requestNextQuestion()
-            })
+            },
+            // additional Reset Statistics closure
+            resetStatistics: {[weak self] in
+            guard let self = self else {return}
+            self.resetStatistics()
+        })
         //        alertModel?.completion()
         guard let alertModel = self.alertModel else {return}
         let alertPresenter = AlertPresenter(alertModel: alertModel)
