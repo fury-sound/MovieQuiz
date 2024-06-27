@@ -14,7 +14,7 @@ struct AlertModel {
     var buttonText: String
     var preferredStyle: UIAlertController.Style
     var completion: () -> ()
-    var resetStatistics: () -> ()
+    var resetStatistics: () -> ()  //additional closure to reset statistics in UserDefaults
     
     init(title: String, message: String, buttonText: String, preferredStyle: UIAlertController.Style, completion: @escaping () -> Void, resetStatistics: @escaping () -> Void) {
         self.title = title

@@ -4,15 +4,14 @@ import Foundation
 final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
     
     //MARK: Блок свойств
+    //фабрика вопросов. Контроллер будет обращаться за вопросами к ней.
+    var questionFactory: QuestionFactoryProtocol = QuestionFactory() // для DI методом или через init()
     // переменная с индексом текущего вопроса, начальное значение 0
     // (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
     private var currentQuestionIndex = 0
-    // переменная со счётчиком правильных ответов, начальное значение закономерно 0
+    // переменная со счётчиком правильных ответов для 1 квиза, начальное значение закономерно 0
     private var correctAnswers = 0
-    //фабрика вопросов. Контроллер будет обращаться за вопросами к ней.
-    //    private var questionFactory: QuestionFactoryProtocol? // для DI свойством
-    var questionFactory: QuestionFactoryProtocol = QuestionFactory() // для DI методом или через init()
-    private let questionAmount: Int = 10 //общее количество вопросов для квиза
+    private let questionAmount: Int = 10 //общее количество вопросов для 1 квиза
     private var currentQuestion: QuizQuestion? //вопрос, который видит пользователь.
     private var alertModel:  AlertModel?
     private var gameStatistics: StatisticServiceProtocol?
@@ -30,75 +29,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
         imageView.layer.cornerRadius = 20
         let questionFactory = QuestionFactory()  //Создаём экземпляр фабрики для ее настройки
-        //    questionFactory.delegate = self                       // Устанавливаем связь фабрика – делегат через свойство.
         questionFactory.setQuestionFactoryDelegate(self) // связь через метод в QuestionFactory
         self.questionFactory = questionFactory  //Сохраняем подготовленный экземляр в свойство вью-контроллера
-        //устраняем дублирование кода в реализации Yandex.
-        // В моем коде заменяем вызовы nextScreen() (имел ту же функцию, но в рамках 1 класса)
+        // вызов функций для первого экрана
         questionFactory.requestNextQuestion()
         gameStatistics = StatisticService()
-//        showUserDefaults()
-
-        // MARK: отличие от описания, вызов универсальной функции вывода вопроса на экран,
-        // вместо вызова этих функций отдельно для первого экрана
-        //    nextScreen() // закомментирован. Функционал ушел в метод didReceiveNextQuestion()
-
-        // testing code for UserDefaults
-        //        print(Bundle.main.bundlePath)
-        //    if let imagePath = Bundle.main.path(forResource: "AppIcon60x60@2x", ofType: "png") {
-        //        let image = UIImage(contentsOfFile: imagePath)
-        //        if image != nil {print("Image is here")} else {print("No image")}
-        //        print(image?.description)
-        //    }
-        //        print(NSHomeDirectory())
-        //        UserDefaults.standard.set(true, forKey: "viewDidLoad")
-//        print(NSUserName(), NSFullUserName())
-//        let homeDirectory = NSHomeDirectory()
-//        let directoryWithFile = homeDirectory + "/Documents/"
-//        let directoryWithFileURL = URL(string: directoryWithFile)
-//        print("Home directory: \(homeDirectory)")
-//        print("Documents directory: \(directoryWithFile)")
-//        print("Documents directory URL: \(directoryWithFileURL)")
-//        print(type(of: homeDirectory))
-//        let fileManager = FileManager()
-//        do {
-//            let temporaryDirectory = try FileManager.default.url(
-//                for: .itemReplacementDirectory,
-//                in: .userDomainMask,
-//                appropriateFor: directoryWithFileURL,
-//                create: false
-//            )
-//            
-//            print(temporaryDirectory)
-//        } catch {
-//            print("Error happened")
-//        }
-//        let isFile = fileManager.fileExists(atPath: directoryWithFile)
-//        print(fileManager.url(for: URL(fileURLWithPath: directoryWithFile), in: fileManager., appropriateFor: <#T##URL?#>, create: <#T##Bool#>))
-//        print("Is file/dir: \(isFile)")
-//        print(fileManager.contents(atPath:   directoryWithFile))
-//        let data = Data()
-//        print(fileManager.createFile(atPath: directoryWithFile, contents:  data))
-    }
-    
-    // additional function to see current UserDefaults content - for debugging, not used in the app
-    func showUserDefaults() {
-        // Получаем словарь всех значений
-        let allValues = UserDefaults.standard.dictionaryRepresentation()
-
-        // Печатаем или обрабатываем все ключи и значения
-        for (key, value) in allValues {
-            print("\(key) - \(value)")
-        }
-    }
-    
-    // additional function to delete statistics data in UserDefaults
-    private func resetStatistics() {
-        let allValues = UserDefaults.standard.dictionaryRepresentation()
-// deleting UserDefaults - comment to store data
-        allValues.keys.forEach { key in
-            UserDefaults.standard.removeObject(forKey: key)
-        }
     }
     
     // MARK: - QuestionFactoryDelegate
@@ -113,10 +48,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: currentQuizStepViewModel)
         }
-        //    next Screen()
     }
     
     // MARK: - Private function
+    
+    // additional function to delete statistics data in UserDefaults
+    private func resetStatistics() {
+        let allValues = UserDefaults.standard.dictionaryRepresentation()
+        // deleting UserDefaults - comment to store data
+        allValues.keys.forEach { key in
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
     
     // приватный метод, который меняет цвет рамки
     // принимает на вход булевое значение и ничего не возвращает
@@ -132,8 +75,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         } else {
             imageView.layer.borderColor = UIColor.ypRed.cgColor
         }
-        // Yandex solution - оставил для сравнения
-        //        imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
             guard let self = self else {  return }
             self.imageView.layer.borderColor = UIColor.clear.cgColor
@@ -146,17 +87,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             // calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
             guard let gameStatistics else { return }
             gameStatistics.store(correct: correctAnswers, total: questionAmount)
-
-//            print("correctAnswers, questionAmount:", correctAnswers, questionAmount)
-//            let tempAccuracy = "Временная точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%"
-//            print(tempAccuracy)
-            
-//            bestDate = dateTimeString(DateFormatter.defaultDateTime.string(from: gameStatistics.bestGame.date))
             
             // идем в состояние "Результат квиза"
             let quizResultsViewModel = QuizResultsViewModel(
                 title: "Раунд окончен",
-//                text: "Ваш результат \(correctAnswers)/\(questionAmount)",
                 text: "Ваш результат \(correctAnswers)/\(questionAmount)\n" +
                 "Количество сыгранных квизов: \(gameStatistics.gamesCount)\n" +
                 "Рекорд: \(gameStatistics.bestGame.correct)/\(gameStatistics.bestGame.total) (\(gameStatistics.bestGame.date.dateTimeString))\n" +
@@ -166,8 +100,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         } else {
             currentQuestionIndex += 1
             // идем в стостояние "Вопрос показан"
-            //       nextScreen()
-            questionFactory.requestNextQuestion() //заменяеи nextScreen()
+            questionFactory.requestNextQuestion()
             buttonStatus(isEnabled: true)
         }
     }
@@ -187,17 +120,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             noButtonStatus.backgroundColor = .ypGray
         }
     }
-    
-    // MARK: отличие от реализации в описании
-    // универсальная функция вывода текущего вопроса по его индексу, с конвертацией по модели и ее показом на экране. Закомментирован - функционал ушел в didReceiveNextQuestion()
-    //private func nextScreen() {
-    //   let currentQuestion = questions[currentQuestionIndex] // old code
-    //    if let nextQuestion = questionFactory.requestNextQuestion() {
-    //        currentQuestion = nextQuestion
-    //        let currentQuizStepViewModel = convert(model: nextQuestion)
-    //        show(quiz: currentQuizStepViewModel)
-    //    }
-    //}
     
     // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -219,11 +141,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     // приватный метод для показа результатов раунда квиза
     // принимает вью модель QuizResultsViewModel и ничего не возвращает
     func show(quiz result: QuizResultsViewModel) {
-        //        var calPresenter = {self.present(alertPresenter?.alert, animated:  true, completion:  nil)}
         alertModel =  AlertModel(
             title: result.title,
             message: result.text,
-//            message: gameStatistics?.bestGame,
             buttonText: result.buttonText,
             preferredStyle: .alert,
             completion:  { [weak self] in
@@ -235,64 +155,29 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             },
             // additional Reset Statistics closure
             resetStatistics: {[weak self] in
-            guard let self = self else {return}
-            self.resetStatistics()
-        })
-        //        alertModel?.completion()
+                guard let self = self else {return}
+                self.resetStatistics()
+            })
         guard let alertModel = self.alertModel else {return}
         let alertPresenter = AlertPresenter(alertModel: alertModel)
         alertPresenter.setAlertPresenterDelegate(self)
         alertPresenter.showAlert()
-        //        guard let alert = alertPresenter.alert else {return}
-        //        self.present(alert, animated:  true, completion:  nil)
-        
-        //    alertPresenter.alertModel?.completion()
-        
-        //    let alert = UIAlertController(
-        //       title: result.title,                 // заголовок всплывающего окна
-        //       message: result.text,               // текст во всплывающем окне
-        //       preferredStyle: .alert)     // preferredStyle может быть .alert или .actionSheet
-        //
-        //    let action = UIAlertAction(title: result.buttonText, style: .default) {  [weak self]  _ in  //слабая ссылка на self
-        //       // убрали увеличение счетчика на класс при использовании self в переменных замыкания с помощью [weak self]
-        //       // проверяем опциональную слабую ссылку на nil (разворачиваем)
-        //       guard let self = self else { return }
-        //       // сбрасываем переменную счетчика вопросов
-        //       self.currentQuestionIndex = 0
-        //       // сбрасываем переменную с количеством правильных ответов
-        //       self.correctAnswers = 0
-        //       // заново показываем вопрос вызовом функции nextScreen(); вопрос первый, поскольку currentQuestionIndex сброшен в 0
-        //      // self.nextScreen()
-        //       self.questionFactory.requestNextQuestion() //заменяет nextScreen()
-        //       // разблокируем кнопки
-        //       self.buttonStatus(isEnabled: true)
-        //   }
-        //       alert.addAction(action)
-        //       self.present(alert, animated:  true, completion:  nil)
     }
     
     //MARK: блок с аннотацией @IBAction
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        //        print("\(self.description) - button pressed")
         let userAnswer = true
-        //        let correctAnswer = questions[currentQuestionIndex].correctAnswer
         guard let correctAnswer = currentQuestion?.correctAnswer else {
-            //            print("\(self.description) - no correct answer")
             return
         }
-        //        print("\(self.description) - Before showAnswerResult")
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        //        print("\(self.description) - button pressed")
         let userAnswer = false
-        //        let correctAnswer = questions[currentQuestionIndex].correctAnswer
         guard let correctAnswer = currentQuestion?.correctAnswer else {
-            //            print("\(self.description) - no correct answer")
             return
         }
-        //        print("\(self.description) - Before showAnswerResult")
         showAnswerResult(isCorrect: userAnswer == correctAnswer)
     }
 }
