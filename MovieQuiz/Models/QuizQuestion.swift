@@ -7,9 +7,12 @@
 
 import Foundation
 
-// вью модель для вопроса
+/// вью модель для вопроса
 struct QuizQuestion {
-    let image: String                       // постер фильма
-    let text: String                          // вопрос о рейтинге фильма
-    let correctAnswer: Bool      // правильный ответ
+    /// постер фильма
+    let image: String
+    /// вопрос о рейтинге фильма
+    let text: String
+    /// правильный ответ
+    let correctAnswer: Bool
 }

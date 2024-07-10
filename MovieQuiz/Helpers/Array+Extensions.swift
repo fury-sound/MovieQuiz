@@ -2,14 +2,12 @@ import Foundation
 
 extension Array {
     subscript(safe index: Index) -> Element? {
-//    subscript(safe index: Int) -> Int {
-//        indices ~= index ? self[index] : nil
         get {
-            // Возвращаем соответствующее значение
+            /// Возвращаем соответствующее значение
             return nil
         }
         set(newValue) {
-            // Устанавливаем подходящее значение
+            /// Устанавливаем подходящее значение
         }
     }
 }

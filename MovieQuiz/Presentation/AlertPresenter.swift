@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-class AlertPresenter: AlertPresenterProtocol {
+final class AlertPresenter: AlertPresenterProtocol {
     
     private var alertModel: AlertModel?
     private var alert: UIAlertController?
@@ -17,9 +17,12 @@ class AlertPresenter: AlertPresenterProtocol {
     init(alertModel: AlertModel) {
         self.alertModel = alertModel
         alert = UIAlertController(
-            title: alertModel.title,                 // заголовок всплывающего окна
-            message: alertModel.message,               // текст во всплывающем окне
-            preferredStyle: alertModel.preferredStyle)     // preferredStyle может быть .alert или .actionSheet
+            /// заголовок всплывающего окна
+            title: alertModel.title,
+            /// текст во всплывающем окне
+            message: alertModel.message,
+            /// preferredStyle может быть .alert или .actionSheet
+            preferredStyle: alertModel.preferredStyle)
     }
     
     func setAlertPresenterDelegate(_ delegate: UIViewController&AlertPresenterDelegate) {
@@ -27,12 +30,12 @@ class AlertPresenter: AlertPresenterProtocol {
     }
     
     func showAlert() {
-        // action for alert button to play one more game, calling completion closure
+        /// action for alert button to play one more game, calling completion closure
         let action = UIAlertAction(title: alertModel?.buttonText, style: .default) {  _ in  //слабая ссылка на self
             guard let alertModel = self.alertModel else {return}
             alertModel.completion()
         }
-        // action for additional Reset Statistics button: resetting UserDefaults values calling completion closure afterwards
+        /// action for additional Reset Statistics button: resetting UserDefaults values calling completion closure afterwards
         let actionReset = UIAlertAction(title: "Сбросить статистику", style: .default) {_ in
             guard let alertModel = self.alertModel else {return}
             alertModel.resetStatistics()
