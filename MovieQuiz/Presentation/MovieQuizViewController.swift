@@ -3,24 +3,9 @@ import Foundation
 
 final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, AlertPresenterDelegate {
     
-    func didLoadDataFromServer() {
-        ///hiding activity indicator
-//        print("didLoadDataFromServer - data loaded")
-        activityIndicator.isHidden = true
-        buttonStatus(isEnabled: true)
-        questionFactory?.requestNextQuestion()
-    }
-    
-    func didFailToLoadData(with error: any Error) {
-//        print(error.localizedDescription)
-        showNetworkError(message: error.localizedDescription)
-    }
-    
-    
     //MARK: Блок свойств
     ///фабрика вопросов. Контроллер будет обращаться за вопросами к ней.
-    var questionFactory: QuestionFactoryProtocol? // = QuestionFactory(moviesLoader: MoviesLoader(), delegate:  nil) /// для DI методом или через init()
-//    var questionFactory: QuestionFactory?
+    var questionFactory: QuestionFactoryProtocol?  /// для DI методом или через init()
     /// переменная с индексом текущего вопроса, начальное значение 0
     /// (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
     private var currentQuestionIndex = 0
@@ -49,12 +34,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         self.questionFactory = questionFactory  ///Сохраняем подготовленный экземляр в свойство вью-контроллера
         gameStatistics = StatisticService()
         showLoadingIndicator()
-        self.questionFactory?.loadData()
         /// вызов функций для первого экрана
-        //        questionFactory.requestNextQuestion()
+        self.questionFactory?.loadData()
     }
     
-    // MARK: - QuestionFactoryDelegate
+    // MARK: - QuestionFactoryDelegate (public functions)
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
         /// проверка, что вопрос question не nil
@@ -68,7 +52,47 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
     }
     
-    // MARK: - Private function
+    func didLoadDataFromServer() {
+        ///hiding activity indicator
+        activityIndicator.isHidden = true
+        buttonStatus(isEnabled: true)
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: any Error) {
+        showNetworkError(message: error.localizedDescription)
+    }
+    
+    // MARK: - AlertPresenterDelegate (public functions)
+    
+    /// метод для показа результатов раунда квиза
+    /// принимает вью модель QuizResultsViewModel и ничего не возвращает
+    func show(quiz result: QuizResultsViewModel) {
+        alertModel =  AlertModel(
+            title: result.title,
+            message: result.text,
+            buttonText: result.buttonText,
+            preferredStyle: .alert,
+            completion:  { [weak self] in
+                guard let self = self else {return}
+                self.currentQuestionIndex = 0
+                self.correctAnswers = 0
+                self.buttonStatus(isEnabled: true)
+                self.questionFactory?.requestNextQuestion()
+            },
+            /// additional Reset Statistics closure
+            resetStatistics: {[weak self] in
+                guard let self = self else {return}
+                self.resetStatistics()
+            })
+        guard let alertModel = self.alertModel else {return}
+        let alertPresenter = AlertPresenter(alertModel: alertModel)
+        alertPresenter.setAlertPresenterDelegate(self)
+        alertPresenter.showAlert()
+    }
+    
+    
+    // MARK: - Private functions
     
     /// additional function to delete statistics data in UserDefaults
     private func resetStatistics() {
@@ -123,7 +147,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             currentQuestionIndex += 1
             /// идем в стостояние "Вопрос показан"
             questionFactory?.loadData()
-//            questionFactory?.requestNextQuestion()
             buttonStatus(isEnabled: true)
         }
     }
@@ -147,7 +170,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     /// метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
         let resModel: QuizStepViewModel = QuizStepViewModel(
-            // image: UIImage(named: model.image) ??  UIImage(),
             image: UIImage(data: model.image) ??  UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
@@ -162,80 +184,32 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         textLabel.text = step.question
     }
     
-    /// приватный метод для показа результатов раунда квиза
-    /// принимает вью модель QuizResultsViewModel и ничего не возвращает
-    func show(quiz result: QuizResultsViewModel) {
-        alertModel =  AlertModel(
-            title: result.title,
-            message: result.text,
-            buttonText: result.buttonText,
-            preferredStyle: .alert,
-            completion:  { [weak self] in
-                guard let self = self else {return}
-                self.currentQuestionIndex = 0
-                self.correctAnswers = 0
-                self.buttonStatus(isEnabled: true)
-                self.questionFactory?.requestNextQuestion()
-            },
-            /// additional Reset Statistics closure
-            resetStatistics: {[weak self] in
-                guard let self = self else {return}
-                self.resetStatistics()
-            })
-        guard let alertModel = self.alertModel else {return}
-        let alertPresenter = AlertPresenter(alertModel: alertModel)
-        alertPresenter.setAlertPresenterDelegate(self)
-        alertPresenter.showAlert()
-    }
-    
     private func showLoadingIndicator() {
-//        print("showLoadingIndicator - showing")
         /// индикатор загрузки не скрыт
-            self.activityIndicator.isHidden = false
-            buttonStatus(isEnabled: false)
-//            print("activityIndicator.isHidden = \(self.activityIndicator.isHidden)")
+        self.activityIndicator.isHidden = false
+        buttonStatus(isEnabled: false)
         /// включаем анимацию
-            self.activityIndicator.startAnimating()
+        self.activityIndicator.startAnimating()
     }
     
     private func hideLoadingIndicator() {
         /// индикатор загрузки скрыт
-//       print("hideLoadingIndicator - hidden")
         activityIndicator.isHidden = true
         buttonStatus(isEnabled: true)
     }
     
     /// showing alert for network error case
     private func showNetworkError(message: String) {
-//        sleep(5)
         hideLoadingIndicator()
-        
         let model = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", preferredStyle: .alert,
                                completion: {
             [weak self] in
             guard let self = self else {return}
-//            print("in completion for network alert")
-//            self.currentQuestionIndex = 0
-//            self.correctAnswers = 0
             self.questionFactory?.loadData()
         },
                                resetStatistics: {})
-
-//        let model = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", preferredStyle: .alert,
-//                               completion: {
-//            [weak self] in
-//            guard let self = self else {return}
-//            print("in completion for network alert")
-//            self.currentQuestionIndex = 0
-//            self.correctAnswers = 0
-////            self.buttonStatus(isEnabled: true)
-//            self.questionFactory?.requestNextQuestion()
-//        },
-//                               resetStatistics: {})
         
         let action = UIAlertAction(title: model.buttonText, style: .default) {  _ in
-            //            guard let model = model else {return}
-//            print("Attempting to upload data again")
             model.completion()
         }
         
@@ -246,12 +220,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             message:  model.message,
             /// preferredStyle может быть .alert или .actionSheet
             preferredStyle: model.preferredStyle)
-        //        alertPresenter.show(in: self, model: model)
         alert.addAction(action)
         self.present(alert, animated:  true, completion:  nil)
     }
     
     //MARK: блок с аннотацией @IBAction
+    
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
         let userAnswer = true
         guard let correctAnswer = currentQuestion?.correctAnswer else {

@@ -19,7 +19,6 @@ struct NetworkClient {
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
         /// Check if error received
             if let error = error {
-//                print("fetch error")
                 handler(.failure(error))
                 return
             }
