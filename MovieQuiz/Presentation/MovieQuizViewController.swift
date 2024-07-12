@@ -7,10 +7,12 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         ///hiding activity indicator
 //        print("didLoadDataFromServer - data loaded")
         activityIndicator.isHidden = true
+        buttonStatus(isEnabled: true)
         questionFactory?.requestNextQuestion()
     }
     
     func didFailToLoadData(with error: any Error) {
+//        print(error.localizedDescription)
         showNetworkError(message: error.localizedDescription)
     }
     
@@ -120,7 +122,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         } else {
             currentQuestionIndex += 1
             /// идем в стостояние "Вопрос показан"
-            questionFactory?.requestNextQuestion()
+            questionFactory?.loadData()
+//            questionFactory?.requestNextQuestion()
             buttonStatus(isEnabled: true)
         }
     }
@@ -144,7 +147,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     /// метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
         let resModel: QuizStepViewModel = QuizStepViewModel(
-            //            image: UIImage(named: model.image) ??  UIImage(),
+            // image: UIImage(named: model.image) ??  UIImage(),
             image: UIImage(data: model.image) ??  UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
@@ -188,29 +191,32 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     private func showLoadingIndicator() {
 //        print("showLoadingIndicator - showing")
         /// индикатор загрузки не скрыт
-        activityIndicator.isHidden = false
+            self.activityIndicator.isHidden = false
+            buttonStatus(isEnabled: false)
+//            print("activityIndicator.isHidden = \(self.activityIndicator.isHidden)")
         /// включаем анимацию
-        activityIndicator.startAnimating()
+            self.activityIndicator.startAnimating()
     }
     
     private func hideLoadingIndicator() {
         /// индикатор загрузки скрыт
+//       print("hideLoadingIndicator - hidden")
         activityIndicator.isHidden = true
+        buttonStatus(isEnabled: true)
     }
     
     /// showing alert for network error case
     private func showNetworkError(message: String) {
+//        sleep(5)
         hideLoadingIndicator()
         
         let model = AlertModel(title: "Ошибка", message: message, buttonText: "Попробовать еще раз", preferredStyle: .alert,
                                completion: {
             [weak self] in
             guard let self = self else {return}
-            print("in completion for network alert")
-            self.currentQuestionIndex = 0
-            self.correctAnswers = 0
-//            self.buttonStatus(isEnabled: true)
-//            self.questionFactory?.requestNextQuestion()
+//            print("in completion for network alert")
+//            self.currentQuestionIndex = 0
+//            self.correctAnswers = 0
             self.questionFactory?.loadData()
         },
                                resetStatistics: {})
@@ -227,7 +233,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
 //        },
 //                               resetStatistics: {})
         
-        let action = UIAlertAction(title: model.buttonText, style: .default) {  _ in  //слабая ссылка на self
+        let action = UIAlertAction(title: model.buttonText, style: .default) {  _ in
             //            guard let model = model else {return}
 //            print("Attempting to upload data again")
             model.completion()
@@ -240,7 +246,6 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             message:  model.message,
             /// preferredStyle может быть .alert или .actionSheet
             preferredStyle: model.preferredStyle)
-        
         //        alertPresenter.show(in: self, model: model)
         alert.addAction(action)
         self.present(alert, animated:  true, completion:  nil)

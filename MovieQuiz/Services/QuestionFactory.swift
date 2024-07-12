@@ -20,10 +20,12 @@ final class QuestionFactory: QuestionFactoryProtocol {
     
     func loadData() {
 //        print("in load data")
+//        self.delegate?.showLoadingIndicator()
         moviesLoader.loadMovies { [weak self] result in
             DispatchQueue.main.async { 
 //                print("loadData - main.async")
                 guard let self = self else { return }
+//                self.delegate?.showLoadingIndicator()
                 switch result {
                 case .success(let mostPopularMovies):
 //                    print("load success")
@@ -83,10 +85,15 @@ final class QuestionFactory: QuestionFactoryProtocol {
             } catch {
                 print("Failed to load image")
             }
-            
+            ///вычисляем случайное значение для сравнения с рейтингом, в диапазоне от 6 до 10, округляя его до 1 знака после запятой
+            var quizRating = round(Float.random(in: 6...10) * 10) / 10.0
             let rating = Float(movie.rating) ?? 0
-            let text = "Рейтинг этого фильма больше 7?"
-            let correctAnswer = rating > 7
+//            print(quizRating, rating)
+//            let text = "Рейтинг этого фильма больше 7?"
+            let text = "Рейтинг этого фильма больше \(quizRating)?"
+            // let correctAnswer = rating > 7 /// исходное жесткое сравнение
+            ///сравнение случайного рейтинга с рейтингом из imDb
+            let correctAnswer = rating > quizRating
 //            print(rating, text, correctAnswer)
             let question = QuizQuestion(image: imageData, text: text, correctAnswer: correctAnswer)
             DispatchQueue.main.async { [weak self] in
