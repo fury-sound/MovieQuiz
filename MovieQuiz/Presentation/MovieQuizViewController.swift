@@ -5,7 +5,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     func didLoadDataFromServer() {
         ///hiding activity indicator
-        print("didLoadDataFromServer - data loaded")
+//        print("didLoadDataFromServer - data loaded")
         activityIndicator.isHidden = true
         questionFactory?.requestNextQuestion()
     }
@@ -186,7 +186,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     private func showLoadingIndicator() {
-        print("showLoadingIndicator - showing")
+//        print("showLoadingIndicator - showing")
         /// индикатор загрузки не скрыт
         activityIndicator.isHidden = false
         /// включаем анимацию
@@ -210,7 +210,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
 //            self.buttonStatus(isEnabled: true)
-            self.questionFactory?.requestNextQuestion()
+//            self.questionFactory?.requestNextQuestion()
+            self.questionFactory?.loadData()
         },
                                resetStatistics: {})
 
@@ -228,7 +229,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         
         let action = UIAlertAction(title: model.buttonText, style: .default) {  _ in  //слабая ссылка на self
             //            guard let model = model else {return}
-            print("Attempting to upload data again")
+//            print("Attempting to upload data again")
             model.completion()
         }
         

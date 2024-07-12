@@ -11,7 +11,7 @@ final class QuestionFactory: QuestionFactoryProtocol {
     private let moviesLoader: MoviesLoading
     weak var delegate: QuestionFactoryDelegate?
     private var movies: [MostPopularMovie] = []
-    private var movie: MostPopularMovie?
+//    private var movie: MostPopularMovie?
     
     init(moviesLoader: MoviesLoading, delegate: QuestionFactoryDelegate?) {
         self.moviesLoader = moviesLoader
@@ -19,10 +19,10 @@ final class QuestionFactory: QuestionFactoryProtocol {
     }
     
     func loadData() {
-        print("in load data")
+//        print("in load data")
         moviesLoader.loadMovies { [weak self] result in
             DispatchQueue.main.async { 
-                print("loadData - main.async")
+//                print("loadData - main.async")
                 guard let self = self else { return }
                 switch result {
                 case .success(let mostPopularMovies):
@@ -39,7 +39,7 @@ final class QuestionFactory: QuestionFactoryProtocol {
 //                print("res", result)
             }
         }
-        print("load data end")
+//        print("load data end")
     }
     
     /// массив со списком моковых вопросов
@@ -61,29 +61,25 @@ final class QuestionFactory: QuestionFactoryProtocol {
     }
     
     func requestNextQuestion()  {
-        print("QuestionFactory - requestNextQuestion")
+//        print("QuestionFactory - requestNextQuestion")
         DispatchQueue.global().async { [weak self] in
             guard let self = self else { return }
-            print("Фильмы: \(self.movies.count)")
+//            print("Фильмы: \(self.movies.count)")
             let index = (0..<self.movies.count).randomElement() ?? 0
-            print(index)
-            print(self.movies[index], type(of: self.movies[index]))
-//            let movie = self.movies[index]
-//            if  movie != nil {
-//                print("ok")
-//            } else {
+//            print(index)
+//            print(self.movies[index], type(of: self.movies[index]))
+            let movValue: MostPopularMovie? = self.movies[index]
+//            guard var movie = self.movies[safe: index] else {
+            guard let movie = movValue else {
+//                print(movie)
 //                print("error with movie in requestnNextSession")
-//            }
-//            guard var movie = self.movies[safe: index] else { 
-            guard var movie = self.movies[safe: index] else {
-                print(movie)
-                print("error with movie in requestnNextSession")
                 return
             }
             
             var imageData = Data()
             do {
-                imageData = try Data(contentsOf: movie.imageURL)
+//                imageData = try Data(contentsOf: movie.imageURL) //картинки низкого качества
+                imageData = try Data(contentsOf: movie.resizedImageURL)
             } catch {
                 print("Failed to load image")
             }
@@ -91,7 +87,7 @@ final class QuestionFactory: QuestionFactoryProtocol {
             let rating = Float(movie.rating) ?? 0
             let text = "Рейтинг этого фильма больше 7?"
             let correctAnswer = rating > 7
-            print(rating, text, correctAnswer)
+//            print(rating, text, correctAnswer)
             let question = QuizQuestion(image: imageData, text: text, correctAnswer: correctAnswer)
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
@@ -107,7 +103,6 @@ final class QuestionFactory: QuestionFactoryProtocol {
         //        let question = questions[ index]
         //        delegate?.didReceiveNextQuestion(question: question)
         //    }
-        print("QuestionFactory - requestNextQuestion end")
-
+//        print("QuestionFactory - requestNextQuestion end")
     }
 }
