@@ -66,7 +66,7 @@ final class QuestionFactory: QuestionFactoryProtocol {
                 print("Failed to load image")
             }
             ///вычисляем случайное значение для сравнения с рейтингом, в диапазоне от 6 до 10, округляя его до 1 знака после запятой
-            var quizRating = round(Float.random(in: 6...10) * 10) / 10.0
+            let quizRating = round(Float.random(in: 6...10) * 10) / 10.0
             let rating = Float(movie.rating) ?? 0
             let text = "Рейтинг этого фильма больше \(quizRating)?"
             ///сравнение случайного рейтинга с рейтингом из imDb
