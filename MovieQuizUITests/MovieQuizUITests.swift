@@ -39,5 +39,62 @@ final class MovieQuizUITests: XCTestCase {
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
+    
+    func testScreenCast() throws {
+        
+//        let app = XCUIApplication()
+        app.buttons["Да"].tap()
+        app/*@START_MENU_TOKEN@*/.staticTexts["Нет"]/*[[".buttons[\"Нет\"].staticTexts[\"Нет\"]",".staticTexts[\"Нет\"]"],[[[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
+        
+    }
+    
+    func testYesButton() {
+        let indexLabel = app.staticTexts["Index"]
+        sleep(15)
+        let firstPoster = app.images["Poster"]  // находим первоначальный постер
+//        XCTAssertTrue(firstPoster.exists)
+        let firstPosterData = firstPoster.screenshot().pngRepresentation
+
+        app.buttons["Yes"].tap() // находим кнопку "Да" и нажимаем ее
+        sleep(15)
+        let secondPoster = app.images["Poster"] // еще раз находим постер
+//        XCTAssertTrue(secondPoster.exists)
+        let secondPosterData = secondPoster.screenshot().pngRepresentation
+//        XCTAssertFalse(firstPoster == secondPoster) // проверяем, что постеры разные
+//        XCTAssertFalse(firstPosterData == secondPosterData) // проверяем, что постеры разные
+        XCTAssertNotEqual(firstPosterData, secondPosterData) // проверяем, что постеры разные - другая функция
+        let res = indexLabel.label
+        XCTAssertEqual(res, "2/10")
+    }
+    
+    func testNoButton() {
+        var indexLabel = app.staticTexts["Index"]
+        sleep(5)
+        let firstPoster = app.images["Poster"]
+        let firstPosterData  = firstPoster.screenshot().pngRepresentation
+        XCTAssertEqual(indexLabel.label, "1/10")
+        app.buttons["No"].tap()
+        indexLabel = app.staticTexts["Index"]
+        sleep(5)
+        let secondPoster = app.images["Poster"]
+        let secondPosterData  = secondPoster.screenshot().pngRepresentation
+        XCTAssertNotEqual(firstPosterData, secondPosterData)
+        XCTAssertEqual(indexLabel.label, "2/10")
+    }
+    
+    func testAlertDialog() {
+        var indexLabel = app.staticTexts["Index"]
+        XCTAssertEqual(indexLabel.label, "1/10")
+        for ind in 1...9 {
+            app.buttons["Yes"].tap()
+            print(ind)
+        }
+        indexLabel = app.staticTexts["Index"]
+        XCTAssertEqual(indexLabel.label, "10/10")
+//        let id = "Alert"
+//        app.alerts
+//        let alertWindow = app.alerts[id]
+        print("id: \(app.alerts)")
+    }
 
 }
