@@ -12,9 +12,9 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     /// переменная со счётчиком правильных ответов для 1 квиза, начальное значение закономерно 0
     private var correctAnswers = 0
     //    private let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
-    private var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
+//    private var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
     private var alertModel:  AlertModel?
-    private var gameStatistics: StatisticServiceProtocol?
+    var gameStatistics: StatisticServiceProtocol?
     private let presenter = MovieQuizPresenter()
     
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
@@ -43,15 +43,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     // MARK: - QuestionFactoryDelegate (public functions)
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
-        /// проверка, что вопрос question не nil
-        guard let question = question else {
-            return
-        }
-        currentQuestion = question
-        let currentQuizStepViewModel = presenter.convert(model: question)
-        DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: currentQuizStepViewModel)
-        }
+        presenter.didReceiveNextQuestion(question: question)
     }
     
     func didLoadDataFromServer() {
@@ -125,40 +117,42 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         }
         DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
             guard let self = self else {  return }
+            self.presenter.correctAnswers = self.correctAnswers
+            self.presenter.questionFactory = self.questionFactory
             self.imageView.layer.borderColor = UIColor.clear.cgColor
-            self.showNextQuestionResults()
+            self.presenter.showNextQuestionResults()
         }
     }
     
-    private func showNextQuestionResults() {
-        //        if currentQuestionIndex == questionAmount - 1 {
-        if presenter.isLastQuestion() {
-            /// calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
-            guard let gameStatistics else { return }
-            gameStatistics.store(correct: correctAnswers, total: presenter.questionAmount)
-            
-            /// идем в состояние "Результат квиза"
-            let quizResultsViewModel = QuizResultsViewModel(
-                title: "Раунд окончен",
-                text: "Ваш результат \(correctAnswers)/\(presenter.questionAmount)\n" +
-                "Количество сыгранных квизов: \(gameStatistics.gamesCount)\n" +
-                "Рекорд: \(gameStatistics.bestGame.correct)/\(gameStatistics.bestGame.total) (\(gameStatistics.bestGame.date.dateTimeString))\n" +
-                "Средняя точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%",
-                buttonText: "Сыграть еще раз!")
-            show(quiz: quizResultsViewModel)
-        } else {
-            presenter.switchToNextQuestion() //currentQuestionIndex += 1
-            /// идем в стостояние "Вопрос показан"
-            questionFactory?.loadData()
-            buttonStatus(isEnabled: true)
-        }
-    }
+//    private func showNextQuestionResults() {
+//        //        if currentQuestionIndex == questionAmount - 1 {
+//        if presenter.isLastQuestion() {
+//            /// calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
+//            guard let gameStatistics else { return }
+//            gameStatistics.store(correct: correctAnswers, total: presenter.questionAmount)
+//            
+//            /// идем в состояние "Результат квиза"
+//            let quizResultsViewModel = QuizResultsViewModel(
+//                title: "Раунд окончен",
+//                text: "Ваш результат \(correctAnswers)/\(presenter.questionAmount)\n" +
+//                "Количество сыгранных квизов: \(gameStatistics.gamesCount)\n" +
+//                "Рекорд: \(gameStatistics.bestGame.correct)/\(gameStatistics.bestGame.total) (\(gameStatistics.bestGame.date.dateTimeString))\n" +
+//                "Средняя точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%",
+//                buttonText: "Сыграть еще раз!")
+//            show(quiz: quizResultsViewModel)
+//        } else {
+//            presenter.switchToNextQuestion() //currentQuestionIndex += 1
+//            /// идем в стостояние "Вопрос показан"
+//            questionFactory?.loadData()
+//            buttonStatus(isEnabled: true)
+//        }
+//    }
     
     /// метод блокировки/разблокировки кнопок Да/Нет по результату аргумента (true/false)
     /// Значение false - блокировка на время показа результата ответа на вопрос (рамка)
     /// Значение true - разблокировка после перехода на новый экран
     /// Цвет фона кнопок, пока они заблокированы, меняется на ypGray
-    private func buttonStatus(isEnabled: Bool) {
+    func buttonStatus(isEnabled: Bool) {
         yesButtonStatus.isEnabled = isEnabled
         noButtonStatus.isEnabled = isEnabled
         if isEnabled {
@@ -181,7 +175,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     //    }
     
     /// метод вывода модели очередного экрана квиза, принимает QuizStepViewModel
-    private func show(quiz step: QuizStepViewModel) {
+    func show(quiz step: QuizStepViewModel) {
         imageView.image = step.image
         counterLabel.text = step.questionNumber // + "/\(questions.count)"
         textLabel.text = step.question
@@ -233,12 +227,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     //MARK: блок с аннотацией @IBAction
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        presenter.currentQuestion = currentQuestion
         presenter.yesButtonClicked()
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        presenter.currentQuestion = currentQuestion
         presenter.noButtonClicked()
     }
 }
