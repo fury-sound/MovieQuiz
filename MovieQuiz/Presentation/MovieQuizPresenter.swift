@@ -24,7 +24,7 @@ final class MovieQuizPresenter {
         currentQuestionIndex == questionAmount - 1
     }
     
-    func resetQuestionIndex() {
+    func restartGame() {
         currentQuestionIndex = 0
     }
     
@@ -79,7 +79,14 @@ final class MovieQuizPresenter {
         return resModel
     }
     
-    private func didAnswer(isYes: Bool) {
+    ///при корректном ответе функция повышает счетчик правильных ответов
+    func didAnswer(isCorrectAnswer: Bool) {
+        if isCorrectAnswer {
+            correctAnswers += 1
+        }
+    }
+    
+    func didAnswer(isYes: Bool) {
         let userAnswer = isYes
         guard let correctAnswer = currentQuestion?.correctAnswer else {
             return

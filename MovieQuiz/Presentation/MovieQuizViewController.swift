@@ -10,7 +10,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     /// (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
     //    private var currentQuestionIndex = 0
     /// переменная со счётчиком правильных ответов для 1 квиза, начальное значение закономерно 0
-    private var correctAnswers = 0
+//    private var correctAnswers = 0
     //    private let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
 //    private var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
     private var alertModel:  AlertModel?
@@ -69,8 +69,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             preferredStyle: .alert,
             completion:  { [weak self] in
                 guard let self = self else {return}
-                self.presenter.resetQuestionIndex()  //self.currentQuestionIndex = 0
-                self.correctAnswers = 0
+                self.presenter.restartGame() //resetQuestionIndex()  //self.currentQuestionIndex = 0
+                self.presenter.correctAnswers = 0
                 self.buttonStatus(isEnabled: true)
                 self.questionFactory?.requestNextQuestion()
             },
@@ -108,16 +108,17 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         imageView.layer.cornerRadius = 20
         /// блокируем кнопки и меняем цвет их фона на время показа результата
         buttonStatus(isEnabled: false)
+        presenter.didAnswer(isCorrectAnswer: isCorrect) //при корректном ответе повышаем счетчик правильных ответов - надо ли это делать тут?
         /// красим рамку
         if isCorrect {
             imageView.layer.borderColor = UIColor.ypGreen.cgColor
-            correctAnswers += 1
+//            presenter.correctAnswers += 1
         } else {
             imageView.layer.borderColor = UIColor.ypRed.cgColor
         }
         DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
             guard let self = self else {  return }
-            self.presenter.correctAnswers = self.correctAnswers
+//            self.presenter.correctAnswers = self.correctAnswers
             self.presenter.questionFactory = self.questionFactory
             self.imageView.layer.borderColor = UIColor.clear.cgColor
             self.presenter.showNextQuestionResults()
@@ -208,8 +209,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
                                resetStatistics: {})
         
         let action = UIAlertAction(title: model.buttonText, style: .default) {  _ in
-            self.presenter.resetQuestionIndex() // а надо ли сбрасывать данные квиза при ошибке сети?
-            self.correctAnswers = 0
+            self.presenter.restartGame() // а надо ли сбрасывать данные квиза при ошибке сети?
+            self.presenter.correctAnswers = 0
             model.completion()
         }
         
