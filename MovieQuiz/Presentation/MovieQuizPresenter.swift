@@ -12,6 +12,9 @@ final class MovieQuizPresenter {
     let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
     /// переменная с индексом текущего вопроса, начальное значение 0; (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
     var currentQuestionIndex = 0
+    var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
+    weak var viewController: MovieQuizViewController?
+    
     
     func isLastQuestion() -> Bool {
         currentQuestionIndex == questionAmount - 1
@@ -33,5 +36,21 @@ final class MovieQuizPresenter {
             questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
         )
         return resModel
+    }
+    
+    private func didAnswer(isYes: Bool) {
+        let userAnswer = isYes
+        guard let correctAnswer = currentQuestion?.correctAnswer else {
+            return
+        }
+        viewController?.showAnswerResult(isCorrect: userAnswer == correctAnswer)
+    }
+    
+    func yesButtonClicked() {
+        didAnswer(isYes: true)
+    }
+    
+    func noButtonClicked() {
+        didAnswer(isYes: false)
     }
 }

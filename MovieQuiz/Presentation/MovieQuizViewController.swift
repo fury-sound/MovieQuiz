@@ -8,10 +8,10 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     var questionFactory: QuestionFactoryProtocol?  /// для DI методом или через init()
     /// переменная с индексом текущего вопроса, начальное значение 0
     /// (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
-//    private var currentQuestionIndex = 0
+    //    private var currentQuestionIndex = 0
     /// переменная со счётчиком правильных ответов для 1 квиза, начальное значение закономерно 0
     private var correctAnswers = 0
-//    private let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
+    //    private let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
     private var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
     private var alertModel:  AlertModel?
     private var gameStatistics: StatisticServiceProtocol?
@@ -30,6 +30,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
         super.viewDidLoad()
         textLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
         imageView.layer.cornerRadius = 20
+        presenter.viewController = self
         let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate:  self)  ///Создаём экземпляр фабрики для ее настройки
         questionFactory.setQuestionFactoryDelegate(self) /// связь через метод в QuestionFactory
         self.questionFactory = questionFactory  ///Сохраняем подготовленный экземляр в свойство вью-контроллера
@@ -106,7 +107,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     
     /// приватный метод, который меняет цвет рамки
     /// принимает на вход булевое значение и ничего не возвращает
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         /// даём разрешение на рисование рамки
         imageView.layer.masksToBounds = true
         /// толщина рамки
@@ -130,7 +131,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     private func showNextQuestionResults() {
-//        if currentQuestionIndex == questionAmount - 1 {
+        //        if currentQuestionIndex == questionAmount - 1 {
         if presenter.isLastQuestion() {
             /// calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
             guard let gameStatistics else { return }
@@ -170,14 +171,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     /// метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
-//    private func convert(model: QuizQuestion) -> QuizStepViewModel {
-//        let resModel: QuizStepViewModel = QuizStepViewModel(
-//            image: UIImage(data: model.image) ??  UIImage(),
-//            question: model.text,
-//            questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
-//        )
-//        return resModel
-//    }
+    //    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+    //        let resModel: QuizStepViewModel = QuizStepViewModel(
+    //            image: UIImage(data: model.image) ??  UIImage(),
+    //            question: model.text,
+    //            questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
+    //        )
+    //        return resModel
+    //    }
     
     /// метод вывода модели очередного экрана квиза, принимает QuizStepViewModel
     private func show(quiz step: QuizStepViewModel) {
@@ -208,7 +209,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             [weak self] in
             guard let self = self else {return}
             self.questionFactory?.loadData()
-
+            
         },
                                resetStatistics: {})
         
@@ -232,19 +233,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     //MARK: блок с аннотацией @IBAction
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
-        let userAnswer = true
-        guard let correctAnswer = currentQuestion?.correctAnswer else {
-            return
-        }
-        showAnswerResult(isCorrect: userAnswer == correctAnswer)
+        presenter.currentQuestion = currentQuestion
+        presenter.yesButtonClicked()
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        let userAnswer = false
-        guard let correctAnswer = currentQuestion?.correctAnswer else {
-            return
-        }
-        showAnswerResult(isCorrect: userAnswer == correctAnswer)
+        presenter.currentQuestion = currentQuestion
+        presenter.noButtonClicked()
     }
 }
 
