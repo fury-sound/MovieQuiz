@@ -8,13 +8,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     var questionFactory: QuestionFactoryProtocol?  /// для DI методом или через init()
     /// переменная с индексом текущего вопроса, начальное значение 0
     /// (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
-    private var currentQuestionIndex = 0
+//    private var currentQuestionIndex = 0
     /// переменная со счётчиком правильных ответов для 1 квиза, начальное значение закономерно 0
     private var correctAnswers = 0
-    private let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
+//    private let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
     private var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
     private var alertModel:  AlertModel?
     private var gameStatistics: StatisticServiceProtocol?
+    private let presenter = MovieQuizPresenter()
     
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     @IBOutlet private weak var yesButtonStatus: UIButton!
@@ -46,7 +47,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             return
         }
         currentQuestion = question
-        let currentQuizStepViewModel = convert(model: question)
+        let currentQuizStepViewModel = presenter.convert(model: question)
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: currentQuizStepViewModel)
         }
@@ -75,7 +76,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             preferredStyle: .alert,
             completion:  { [weak self] in
                 guard let self = self else {return}
-                self.currentQuestionIndex = 0
+                self.presenter.resetQuestionIndex()  //self.currentQuestionIndex = 0
                 self.correctAnswers = 0
                 self.buttonStatus(isEnabled: true)
                 self.questionFactory?.requestNextQuestion()
@@ -129,22 +130,23 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     private func showNextQuestionResults() {
-        if currentQuestionIndex == questionAmount - 1 {
+//        if currentQuestionIndex == questionAmount - 1 {
+        if presenter.isLastQuestion() {
             /// calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
             guard let gameStatistics else { return }
-            gameStatistics.store(correct: correctAnswers, total: questionAmount)
+            gameStatistics.store(correct: correctAnswers, total: presenter.questionAmount)
             
             /// идем в состояние "Результат квиза"
             let quizResultsViewModel = QuizResultsViewModel(
                 title: "Раунд окончен",
-                text: "Ваш результат \(correctAnswers)/\(questionAmount)\n" +
+                text: "Ваш результат \(correctAnswers)/\(presenter.questionAmount)\n" +
                 "Количество сыгранных квизов: \(gameStatistics.gamesCount)\n" +
                 "Рекорд: \(gameStatistics.bestGame.correct)/\(gameStatistics.bestGame.total) (\(gameStatistics.bestGame.date.dateTimeString))\n" +
                 "Средняя точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%",
                 buttonText: "Сыграть еще раз!")
             show(quiz: quizResultsViewModel)
         } else {
-            currentQuestionIndex += 1
+            presenter.switchToNextQuestion() //currentQuestionIndex += 1
             /// идем в стостояние "Вопрос показан"
             questionFactory?.loadData()
             buttonStatus(isEnabled: true)
@@ -168,14 +170,14 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
     }
     
     /// метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let resModel: QuizStepViewModel = QuizStepViewModel(
-            image: UIImage(data: model.image) ??  UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
-        )
-        return resModel
-    }
+//    private func convert(model: QuizQuestion) -> QuizStepViewModel {
+//        let resModel: QuizStepViewModel = QuizStepViewModel(
+//            image: UIImage(data: model.image) ??  UIImage(),
+//            question: model.text,
+//            questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
+//        )
+//        return resModel
+//    }
     
     /// метод вывода модели очередного экрана квиза, принимает QuizStepViewModel
     private func show(quiz step: QuizStepViewModel) {
@@ -206,10 +208,13 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate, 
             [weak self] in
             guard let self = self else {return}
             self.questionFactory?.loadData()
+
         },
                                resetStatistics: {})
         
         let action = UIAlertAction(title: model.buttonText, style: .default) {  _ in
+            self.presenter.resetQuestionIndex() // а надо ли сбрасывать данные квиза при ошибке сети?
+            self.correctAnswers = 0
             model.completion()
         }
         
