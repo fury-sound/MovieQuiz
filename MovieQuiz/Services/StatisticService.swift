@@ -65,7 +65,7 @@ final class StatisticService: StatisticServiceProtocol {
         correctTotal += count
         gamesCount +=  1
         totalAccuracy = (Double(correctTotal)/Double(10*gamesCount))*100
-        
+
         let bestGameTemp = GameResult(correct: count, total: amount, date: Date())
         if bestGameTemp.compareRecords(bestGame) {
             bestGame = GameResult(correct: count, total: amount, date: Date())

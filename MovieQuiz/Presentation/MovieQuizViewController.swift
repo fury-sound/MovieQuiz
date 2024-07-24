@@ -63,6 +63,7 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
     /// принимает вью модель QuizResultsViewModel и ничего не возвращает
     func show(quiz result: QuizResultsViewModel) {
 //        let message = presenter.makeResultsMessage()
+        /// оставил alertModel, которая формируется здесь вместе с замыканиями для запуска новой игры и сброса статистики - отличие от авторского кода
         alertModel =  AlertModel(
             title: result.title,
             message: result.text,
@@ -71,7 +72,7 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
             completion:  { [weak self] in
                 guard let self = self else {return}
                 self.presenter.restartGame() //resetQuestionIndex()  //self.currentQuestionIndex = 0
-                self.presenter.correctAnswers = 0
+//                self.presenter.correctAnswers = 0
                 self.buttonStatus(isEnabled: true)
             },
             /// additional Reset Statistics closure
@@ -99,7 +100,18 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
     
     /// приватный метод, который меняет цвет рамки
     /// принимает на вход булевое значение и ничего не возвращает
-    func showAnswerResult(isCorrect: Bool) {
+//    func showAnswerResult(isCorrect: Bool) {
+//        didAnswer(isCorrectAnswer:  isCorrect)
+//        highlightImageBorder(isCorrectAnswer: isCorrect)
+// 
+//        DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
+//            guard let self = self else {  return }
+//            self.imageView.layer.borderColor = UIColor.clear.cgColor
+//            self.presenter.showNextQuestionResults()
+//        }
+//    }
+    
+    func highlightImageBorder(isCorrectAnswer: Bool) {
         /// даём разрешение на рисование рамки
         imageView.layer.masksToBounds = true
         /// толщина рамки
@@ -108,19 +120,18 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
         imageView.layer.cornerRadius = 20
         /// блокируем кнопки и меняем цвет их фона на время показа результата
         buttonStatus(isEnabled: false)
-        presenter.didAnswer(isCorrectAnswer: isCorrect) //при корректном ответе повышаем счетчик правильных ответов - надо ли это делать тут?
+//        presenter.didAnswer(isCorrectAnswer: isCorrectAnswer) //при корректном ответе повышаем счетчик правильных ответов - надо ли это делать тут?
         /// красим рамку
-        if isCorrect {
+        if isCorrectAnswer {
             imageView.layer.borderColor = UIColor.ypGreen.cgColor
 //            presenter.correctAnswers += 1 //счетчик правильных ответов в презентере - увеличиваем так или через функцию выше
         } else {
             imageView.layer.borderColor = UIColor.ypRed.cgColor
         }
-        DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
-            guard let self = self else {  return }
-            self.imageView.layer.borderColor = UIColor.clear.cgColor
-            self.presenter.showNextQuestionResults()
-        }
+    }
+    
+    func makeTransparentImageBorder() {
+        self.imageView.layer.borderColor = UIColor.clear.cgColor
     }
     
 //    private func showNextQuestionResults() {
