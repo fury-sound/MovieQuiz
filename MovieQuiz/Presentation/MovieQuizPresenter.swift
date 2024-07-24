@@ -8,24 +8,32 @@
 import Foundation
 import UIKit
 
-final class MovieQuizPresenter {
+final class MovieQuizPresenter: QuestionFactoryDelegate {
     ///фабрика вопросов. Контроллер будет обращаться за вопросами к ней.
-    var questionFactory: QuestionFactoryProtocol?  /// для DI методом или через init()
+    private var questionFactory: QuestionFactoryProtocol?  /// для DI методом или через init()
     let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
     /// переменная с индексом текущего вопроса, начальное значение 0; (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
     var currentQuestionIndex = 0
     var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
     /// переменная со счётчиком правильных ответов для 1 квиза, начальное значение закономерно 0
     var correctAnswers = 0
-    weak var viewController: MovieQuizViewController?
+    private weak var viewController: MovieQuizViewController?
     
+    init(viewController: MovieQuizViewController) {
+        self.viewController = viewController
+        questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        questionFactory?.loadData()
+        viewController.showLoadingIndicator()
+    }
     
     func isLastQuestion() -> Bool {
         currentQuestionIndex == questionAmount - 1
     }
     
     func restartGame() {
-        currentQuestionIndex = 0
+        currentQuestionIndex = 0           
+        correctAnswers = 0
+        questionFactory?.requestNextQuestion()
     }
     
     func switchToNextQuestion() {
@@ -33,6 +41,22 @@ final class MovieQuizPresenter {
     }
     
     // MARK: - QuestionFactoryDelegate (public functions)
+    
+//        func didReceiveNextQuestion(question: QuizQuestion?) {
+//            didReceiveNextQuestion(question: question)
+//        }
+        
+        func didLoadDataFromServer() {
+            ///hiding activity indicator
+            viewController?.hideLoadingIndicator()
+            viewController?.buttonStatus(isEnabled: true)
+            questionFactory?.requestNextQuestion()
+        }
+        
+        func didFailToLoadData(with error: any Error) {
+            let message = error.localizedDescription
+            viewController?.showNetworkError(message: message)
+        }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
         /// проверка, что вопрос question не nil
