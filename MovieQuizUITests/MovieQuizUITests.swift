@@ -45,7 +45,6 @@ final class MovieQuizUITests: XCTestCase {
         //        let app = XCUIApplication()
         app.buttons["Да"].tap()
         app/*@START_MENU_TOKEN@*/.staticTexts["Нет"]/*[[".buttons[\"Нет\"].staticTexts[\"Нет\"]",".staticTexts[\"Нет\"]"],[[[-1,1],[-1,0]]],[0]]@END_MENU_TOKEN@*/.tap()
-        
     }
     
     func testYesButton() {
@@ -86,15 +85,28 @@ final class MovieQuizUITests: XCTestCase {
         let id = "MyAlert"
         for _ in 1...10 {
             sleep(1)
-//            print(ind)
             app.buttons["Yes"].tap()
         }
         sleep(1)
         XCTAssertTrue(app.alerts[id].exists)
         let alert = app.alerts[id]
-//        print("Elements:" ,  alert.label)
         XCTAssertEqual(alert.label, "Раунд окончен")
         XCTAssertEqual(alert.buttons.firstMatch.label, "Сыграть еще раз!")
+    }
+    
+    func testAlertDisappear() {
+        let id = "MyAlert"
+        sleep(2)
+        for _ in 1...10 {
+            app.buttons["Yes"].tap()
+            sleep(1)
+        }
+        let alert = app.alerts[id]
+        alert.buttons.firstMatch.tap()
+        sleep(1)
+        let indexLabel = app.staticTexts["Index"]
+        XCTAssertFalse(alert.exists)
+        XCTAssertEqual(indexLabel.label, "1/10")
     }
     
 }

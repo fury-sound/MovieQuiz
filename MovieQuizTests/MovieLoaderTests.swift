@@ -43,7 +43,6 @@ class MovieLoaderTests: XCTestCase {
         // Given
         let stubNetworkClient = StubNetworkClient(emulateError: true)
         let loader = MoviesLoader(networkClient: stubNetworkClient)
-//        let loader = MoviesLoader()
 
         // When
         let expectation = expectation(description: "Loading expectation")
@@ -78,7 +77,6 @@ struct StubNetworkClient: NetworkRouting {
             handler(.failure(TestError.test))
         } else {
             handler(.success(expectedResponse))
-//            handler(.success(expectedFailure))
         }
     }
     
