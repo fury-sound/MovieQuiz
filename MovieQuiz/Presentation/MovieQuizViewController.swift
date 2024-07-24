@@ -14,7 +14,7 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
     //    private let questionAmount: Int = 10 ///общее количество вопросов для 1 квиза
 //    private var currentQuestion: QuizQuestion? ///вопрос, который видит пользователь.
     private var alertModel:  AlertModel?
-    var gameStatistics: StatisticServiceProtocol?
+//    var gameStatistics: StatisticServiceProtocol?
     private var presenter: MovieQuizPresenter!
     
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
@@ -34,7 +34,7 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
 //        let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate:  self)  ///Создаём экземпляр фабрики для ее настройки
 //        questionFactory.setQuestionFactoryDelegate(self) /// связь через метод в QuestionFactory
 //        self.questionFactory = questionFactory  ///Сохраняем подготовленный экземляр в свойство вью-контроллера
-        gameStatistics = StatisticService()
+//        gameStatistics = StatisticService()
         showLoadingIndicator()
         /// вызов функций для первого экрана
 //        self.questionFactory?.loadData() // как вызываем первый экран?
@@ -62,6 +62,7 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
     /// метод для показа результатов раунда квиза
     /// принимает вью модель QuizResultsViewModel и ничего не возвращает
     func show(quiz result: QuizResultsViewModel) {
+//        let message = presenter.makeResultsMessage()
         alertModel =  AlertModel(
             title: result.title,
             message: result.text,
@@ -72,12 +73,11 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
                 self.presenter.restartGame() //resetQuestionIndex()  //self.currentQuestionIndex = 0
                 self.presenter.correctAnswers = 0
                 self.buttonStatus(isEnabled: true)
-                self.presenter.restartGame() //self.questionFactory?.requestNextQuestion()
             },
             /// additional Reset Statistics closure
             resetStatistics: {[weak self] in
                 guard let self = self else {return}
-                self.resetStatistics()
+                presenter.resetStatistics()
             })
         guard let alertModel = self.alertModel else {return}
         let alertPresenter = AlertPresenter(alertModel: alertModel)
@@ -89,13 +89,13 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
     // MARK: - Private functions
     
     /// additional function to delete statistics data in UserDefaults
-    private func resetStatistics() {
-        let allValues = UserDefaults.standard.dictionaryRepresentation()
-        /// deleting UserDefaults - comment to store data
-        allValues.keys.forEach { key in
-            UserDefaults.standard.removeObject(forKey: key)
-        }
-    }
+//    private func resetStatistics() {
+//        let allValues = UserDefaults.standard.dictionaryRepresentation()
+//        /// deleting UserDefaults - comment to store data
+//        allValues.keys.forEach { key in
+//            UserDefaults.standard.removeObject(forKey: key)
+//        }
+//    }
     
     /// приватный метод, который меняет цвет рамки
     /// принимает на вход булевое значение и ничего не возвращает
@@ -118,8 +118,6 @@ final class MovieQuizViewController: UIViewController, AlertPresenterDelegate {
         }
         DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
             guard let self = self else {  return }
-//            self.presenter.correctAnswers = self.correctAnswers
-//            self.presenter.questionFactory = self.questionFactory
             self.imageView.layer.borderColor = UIColor.clear.cgColor
             self.presenter.showNextQuestionResults()
         }

@@ -18,9 +18,11 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     /// переменная со счётчиком правильных ответов для 1 квиза, начальное значение закономерно 0
     var correctAnswers = 0
     private weak var viewController: MovieQuizViewController?
+    var gameStatistics: StatisticServiceProtocol!
     
     init(viewController: MovieQuizViewController) {
         self.viewController = viewController
+        gameStatistics = StatisticService()
         questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
         questionFactory?.loadData()
         viewController.showLoadingIndicator()
@@ -31,7 +33,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     }
     
     func restartGame() {
-        currentQuestionIndex = 0           
+        currentQuestionIndex = 0
         correctAnswers = 0
         questionFactory?.requestNextQuestion()
     }
@@ -42,21 +44,21 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     // MARK: - QuestionFactoryDelegate (public functions)
     
-//        func didReceiveNextQuestion(question: QuizQuestion?) {
-//            didReceiveNextQuestion(question: question)
-//        }
-        
-        func didLoadDataFromServer() {
-            ///hiding activity indicator
-            viewController?.hideLoadingIndicator()
-            viewController?.buttonStatus(isEnabled: true)
-            questionFactory?.requestNextQuestion()
-        }
-        
-        func didFailToLoadData(with error: any Error) {
-            let message = error.localizedDescription
-            viewController?.showNetworkError(message: message)
-        }
+    //        func didReceiveNextQuestion(question: QuizQuestion?) {
+    //            didReceiveNextQuestion(question: question)
+    //        }
+    
+    func didLoadDataFromServer() {
+        ///hiding activity indicator
+        viewController?.hideLoadingIndicator()
+        viewController?.buttonStatus(isEnabled: true)
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: any Error) {
+        let message = error.localizedDescription
+        viewController?.showNetworkError(message: message)
+    }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
         /// проверка, что вопрос question не nil
@@ -72,17 +74,12 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     func showNextQuestionResults() {
         if self.isLastQuestion() {
-            /// calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
-            guard let gameStatistics = viewController?.gameStatistics else { return }
-            gameStatistics.store(correct: correctAnswers, total: questionAmount)
-            
+            /// forming result message after 10 questions
+            let resultMessage = makeResultsMessage()
             /// идем в состояние "Результат квиза"
             let quizResultsViewModel = QuizResultsViewModel(
                 title: "Раунд окончен",
-                text: "Ваш результат \(correctAnswers)/\(questionAmount)\n" +
-                "Количество сыгранных квизов: \(gameStatistics.gamesCount)\n" +
-                "Рекорд: \(gameStatistics.bestGame.correct)/\(gameStatistics.bestGame.total) (\(gameStatistics.bestGame.date.dateTimeString))\n" +
-                "Средняя точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%",
+                text: resultMessage,
                 buttonText: "Сыграть еще раз!")
             viewController?.show(quiz: quizResultsViewModel)
         } else {
@@ -93,6 +90,23 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         }
     }
     
+    /// метод создания итогового сообщения для алерта
+    func makeResultsMessage() -> String {
+        /// calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
+        gameStatistics.store(correct: correctAnswers, total: questionAmount)
+        
+        let _ = gameStatistics.bestGame
+        let totalPlaysCountline = "Количество сыгранных квизов: \(gameStatistics.gamesCount)"
+        let currentGameResultLine = "Ваш результат \(correctAnswers)/\(questionAmount)"
+        let bestGameInfoLine = "Рекорд: \(gameStatistics.bestGame.correct)/\(gameStatistics.bestGame.total) (\(gameStatistics.bestGame.date.dateTimeString))"
+        let averageAccuracyLine = "Средняя точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%"
+        
+        let resultMessage = [currentGameResultLine, totalPlaysCountline, bestGameInfoLine, averageAccuracyLine].joined(separator: "\n")
+        
+        return resultMessage
+        
+    }
+    
     /// метод конвертации, который принимает моковый/реальный вопрос и возвращает вью модель для экрана вопроса
     func convert(model: QuizQuestion) -> QuizStepViewModel {
         let resModel: QuizStepViewModel = QuizStepViewModel(
@@ -101,6 +115,15 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
             questionNumber: "\(currentQuestionIndex + 1)/\(questionAmount)"
         )
         return resModel
+    }
+    
+    /// additional function to delete statistics data in UserDefaults
+    func resetStatistics() {
+        let allValues = UserDefaults.standard.dictionaryRepresentation()
+        /// deleting UserDefaults - comment to store data
+        allValues.keys.forEach { key in
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
     
     ///при корректном ответе функция повышает счетчик правильных ответов
