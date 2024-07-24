@@ -20,7 +20,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     private weak var viewController: MovieQuizViewController?
     private var gameStatistics: StatisticServiceProtocol!
     
-//    init(viewController: MovieQuizViewController) {
+    //    init(viewController: MovieQuizViewController) {
     init(viewController: MovieQuizViewControllerProtocol) {
         self.viewController = viewController as? MovieQuizViewController
         gameStatistics = StatisticService()
@@ -29,25 +29,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         viewController.showLoadingIndicator()
     }
     
-    private func isLastQuestion() -> Bool {
-        currentQuestionIndex == questionAmount - 1
-    }
-    
-    func restartGame() {
-        currentQuestionIndex = 0
-        correctAnswers = 0
-        questionFactory?.requestNextQuestion()
-    }
-    
-    func switchToNextQuestion() {
-        currentQuestionIndex += 1
-    }
-    
     // MARK: - QuestionFactoryDelegate (public functions)
-    
-    //        func didReceiveNextQuestion(question: QuizQuestion?) {
-    //            didReceiveNextQuestion(question: question)
-    //        }
     
     func didLoadDataFromServer() {
         ///hiding activity indicator
@@ -73,39 +55,30 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         }
     }
     
-    private func proceedToNextQuestionOrResults() {
-        if self.isLastQuestion() {
-            /// forming result message after 10 questions
-            let resultMessage = makeResultsMessage()
-            /// идем в состояние "Результат квиза"
-            let quizResultsViewModel = QuizResultsViewModel(
-                title: "Раунд окончен",
-                text: resultMessage,
-                buttonText: "Сыграть еще раз!")
-            viewController?.show(quiz: quizResultsViewModel)
-        } else {
-            switchToNextQuestion() //currentQuestionIndex += 1
-            /// идем в стостояние "Вопрос показан"
-            questionFactory?.loadData()
-            viewController?.buttonStatus(isEnabled: true)
-        }
+    // MARK: - Public functions
+    
+    func restartGame() {
+        currentQuestionIndex = 0
+        correctAnswers = 0
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func switchToNextQuestion() {
+        currentQuestionIndex += 1
     }
     
     /// метод создания итогового сообщения для алерта
     func makeResultsMessage() -> String {
         /// calling store function from StatisticsService instance (gameStatistics) to store all data in the UserDefaults
         gameStatistics.store(correct: correctAnswers, total: questionAmount)
-        
         let bestGame = gameStatistics.bestGame
         let totalPlaysCountline = "Количество сыгранных квизов: \(gameStatistics.gamesCount)"
         let currentGameResultLine = "Ваш результат \(correctAnswers)/\(questionAmount)"
         let bestGameInfoLine = "Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))"
         let averageAccuracyLine = "Средняя точность: \(String(format: "%.2f", (gameStatistics.totalAccuracy)))%"
-        
         let resultMessage = [currentGameResultLine, totalPlaysCountline, bestGameInfoLine, averageAccuracyLine].joined(separator: "\n")
         
         return resultMessage
-        
     }
     
     /// метод конвертации, который принимает моковый/реальный вопрос и возвращает вью модель для экрана вопроса
@@ -124,19 +97,6 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         /// deleting UserDefaults - comment to store data
         allValues.keys.forEach { key in
             UserDefaults.standard.removeObject(forKey: key)
-        }
-    }
-    
-    /// приватный метод, который меняет цвет рамки
-    /// принимает на вход булевое значение и ничего не возвращает
-    private func proceedWithAnswer(isCorrect: Bool) {
-        didAnswer(isCorrectAnswer:  isCorrect)
-        viewController?.highlightImageBorder(isCorrectAnswer: isCorrect)
- 
-        DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
-            guard let self = self else {  return }
-            viewController?.makeTransparentImageBorder()
-            self.proceedToNextQuestionOrResults()
         }
     }
     
@@ -161,5 +121,42 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     func noButtonClicked() {
         didAnswer(isYes: false)
+    }
+    
+    // MARK: - Private functions
+    
+    private func isLastQuestion() -> Bool {
+        currentQuestionIndex == questionAmount - 1
+    }
+    
+    private func proceedToNextQuestionOrResults() {
+        if self.isLastQuestion() {
+            /// forming result message after 10 questions
+            let resultMessage = makeResultsMessage()
+            /// идем в состояние "Результат квиза"
+            let quizResultsViewModel = QuizResultsViewModel(
+                title: "Раунд окончен",
+                text: resultMessage,
+                buttonText: "Сыграть еще раз!")
+            viewController?.show(quiz: quizResultsViewModel)
+        } else {
+            switchToNextQuestion() //currentQuestionIndex += 1
+            /// идем в стостояние "Вопрос показан"
+            questionFactory?.loadData()
+            viewController?.buttonStatus(isEnabled: true)
+        }
+    }
+    
+    /// приватный метод, который меняет цвет рамки
+    /// принимает на вход булевое значение и ничего не возвращает
+    private func proceedWithAnswer(isCorrect: Bool) {
+        didAnswer(isCorrectAnswer:  isCorrect)
+        viewController?.highlightImageBorder(isCorrectAnswer: isCorrect)
+        
+        DispatchQueue.main.asyncAfter(deadline:  .now() + 1.0) { [weak self] in
+            guard let self = self else {  return }
+            viewController?.makeTransparentImageBorder()
+            self.proceedToNextQuestionOrResults()
+        }
     }
 }
