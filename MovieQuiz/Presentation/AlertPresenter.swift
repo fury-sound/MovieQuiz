@@ -42,6 +42,8 @@ final class AlertPresenter: AlertPresenterProtocol {
             alertModel.completion()
         }
         guard let delegate = delegate, let alert = alert else { return }
+        alert.view.accessibilityIdentifier = "MyAlert"
+//        alert.view.accessibilityLabel = "AlertTitle"
         alert.addAction(action)
         alert.addAction(actionReset)
         delegate.present(alert, animated:  true, completion:  nil)
